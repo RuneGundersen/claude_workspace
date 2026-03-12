@@ -1,0 +1,12 @@
+# Build output
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+.vs/
+
+# Python cache
+__pycache__/
+*.pyc
