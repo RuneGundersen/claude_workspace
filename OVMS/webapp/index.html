@@ -49,15 +49,23 @@
     <div class="soc-bar-bg">
       <div id="socBar" class="soc-fill green" style="width:0%"></div>
     </div>
-    <div class="soc-range">
-      <span>Rekkevidde</span>
-      <span id="rangeValue" class="range-val">-- km</span>
+    <div class="soc-range-row">
+      <div class="soc-range-item">
+        <span class="soc-range-label">Est. rekkevidde</span>
+        <span id="rangeValue" class="range-val">--</span>
+        <span class="range-unit">km</span>
+      </div>
+      <div class="soc-range-item">
+        <span class="soc-range-label">Ved full lading</span>
+        <span id="rangeFull" class="range-val">--</span>
+        <span class="range-unit">km</span>
+      </div>
     </div>
   </div>
 
-  <!-- Battery stats -->
+  <!-- Electrical -->
   <div class="card">
-    <div class="card-title">Detaljer</div>
+    <div class="card-title">Elektrisk</div>
     <div class="stat-grid">
       <div class="stat-item">
         <span class="stat-label">Spenning</span>
@@ -71,16 +79,97 @@
         <span class="stat-label">Effekt</span>
         <span id="battPower" class="stat-val">--</span>
       </div>
+    </div>
+  </div>
+
+  <!-- Health & Capacity -->
+  <div class="card">
+    <div class="card-title">Helse &amp; Kapasitet</div>
+    <div class="stat-grid">
       <div class="stat-item">
-        <span class="stat-label">Temp.</span>
-        <span id="battTemp" class="stat-val">--</span>
+        <span class="stat-label">Helse (SOH)</span>
+        <span id="battHealth" class="stat-val">--</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Helse</span>
-        <span id="battHealth" class="stat-val">--</span>
+        <span class="stat-label">Beregnet kap.</span>
+        <span id="battCac" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Nominell kap.</span>
+        <span id="battCapacity" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Sykluseller</span>
+        <span id="battCycles" class="stat-val">--</span>
       </div>
     </div>
   </div>
+
+  <!-- Temperature -->
+  <div class="card">
+    <div class="card-title">Temperatur</div>
+    <div class="stat-grid">
+      <div class="stat-item">
+        <span class="stat-label">Batteri</span>
+        <span id="battTemp" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Min celle</span>
+        <span id="battTempMin" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Maks celle</span>
+        <span id="battTempMax" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Motortemp.</span>
+        <span id="motorTemp" class="stat-val">--</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Energy Statistics -->
+  <div class="card">
+    <div class="card-title">Energistatistikk</div>
+    <div class="stat-grid">
+      <div class="stat-item stat-item--accent-red">
+        <span class="stat-label">Brukt energi</span>
+        <span id="battEnergyUsed" class="stat-val">--</span>
+      </div>
+      <div class="stat-item stat-item--accent-green">
+        <span class="stat-label">Gjenvunnet</span>
+        <span id="battEnergyRecd" class="stat-val">--</span>
+      </div>
+      <div class="stat-item stat-item--accent-red">
+        <span class="stat-label">Utladet (Ah)</span>
+        <span id="battCoulombUsed" class="stat-val">--</span>
+      </div>
+      <div class="stat-item stat-item--accent-green">
+        <span class="stat-label">Gjenvunnet (Ah)</span>
+        <span id="battCoulombRecd" class="stat-val">--</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 12V Auxiliary Battery -->
+  <div class="card">
+    <div class="card-title">12V Hjelpebatteri</div>
+    <div class="stat-grid">
+      <div class="stat-item">
+        <span class="stat-label">Spenning</span>
+        <span id="batt12vVoltage" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Strøm</span>
+        <span id="batt12vCurrent" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Tilstand</span>
+        <span id="batt12vState" class="stat-val">--</span>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- Charging Panel -->
@@ -167,6 +256,13 @@
     <div id="gpsCoords" class="gps-coords">Henter posisjon...</div>
     <div id="mapContainer"></div>
   </div>
+</div>
+
+<!-- Debug panel -->
+<div style="margin:12px;background:#111;border:1px solid #333;border-radius:10px;padding:12px;">
+  <div style="font-size:11px;color:#888;margin-bottom:6px;">🔧 Tilkoblingslogg</div>
+  <div style="font-size:11px;color:#aaa;">Broker: <span id="brokerUrl" style="color:#4a90d9"></span></div>
+  <textarea id="debugLog" readonly style="width:100%;height:80px;background:#000;color:#0f0;font-family:monospace;font-size:10px;border:none;margin-top:8px;resize:none;border-radius:6px;padding:6px;"></textarea>
 </div>
 
 <!-- Toast notification -->

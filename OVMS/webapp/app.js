@@ -21,6 +21,7 @@ function connect() {
 function setupEventHandlers() {
   ovms.on('connected', () => {
     setStatus('online');
+    showDebug('Tilkoblet: ' + OVMS_CONFIG.broker);
     updateInterval = setInterval(refreshUI, 2000);
   });
 
@@ -29,11 +30,15 @@ function setupEventHandlers() {
     clearInterval(updateInterval);
   });
 
-  ovms.on('reconnecting', () => setStatus('connecting'));
+  ovms.on('reconnecting', () => {
+    setStatus('connecting');
+    showDebug('Kobler til: ' + OVMS_CONFIG.broker);
+  });
 
   ovms.on('error', msg => {
     setStatus('offline');
-    showToast('Tilkoblingsfeil: ' + msg);
+    showToast('Feil: ' + msg);
+    showDebug('ERROR: ' + msg);
   });
 
   ovms.on('metric', ({ key }) => {
@@ -71,33 +76,77 @@ function refreshUI() {
 }
 
 function updateStaticInfo() {
-  document.getElementById('carName').textContent = OVMS_CONFIG.carName;
-  document.getElementById('carYear').textContent = OVMS_CONFIG.carYear;
-  document.getElementById('vin').textContent     = OVMS_CONFIG.vin;
+  document.getElementById('carName').textContent   = OVMS_CONFIG.carName;
+  document.getElementById('carYear').textContent   = OVMS_CONFIG.carYear;
+  document.getElementById('vin').textContent       = OVMS_CONFIG.vin;
+  document.getElementById('brokerUrl').textContent = OVMS_CONFIG.broker;
 }
 
 function updateBattery() {
-  const soc      = ovms.getFloat('v.b.soc', 1);
-  const range    = ovms.getFloat('v.b.range.est', 0) ?? ovms.getFloat('v.b.range', 0);
-  const voltage  = ovms.getFloat('v.b.voltage', 1);
-  const current  = ovms.getFloat('v.b.current', 1);
-  const temp     = ovms.getFloat('v.b.temp', 1);
-  const health   = ovms.getFloat('v.b.health', 0);
-  const power    = (voltage && current) ? Math.abs(voltage * current / 1000).toFixed(2) : null;
+  // SOC & range
+  const soc        = ovms.getFloat('v.b.soc', 1);
+  const rangeEst   = ovms.getFloat('v.b.range.est', 0) ?? ovms.getFloat('v.b.range', 0);
+  const rangeFull  = ovms.getFloat('v.b.range.full', 0);
 
-  // SOC gauge
   const pct = soc ?? 0;
-  document.getElementById('socValue').textContent  = soc !== null ? `${soc}%` : '--';
-  document.getElementById('socBar').style.width     = `${Math.min(pct, 100)}%`;
-  document.getElementById('socBar').className       = 'soc-fill ' + socColor(pct);
-  document.getElementById('rangeValue').textContent = range !== null ? `${range} km` : '--';
+  document.getElementById('socValue').textContent = soc !== null ? `${soc}%` : '--%';
+  document.getElementById('socBar').style.width   = `${Math.min(pct, 100)}%`;
+  document.getElementById('socBar').className     = 'soc-fill ' + socColor(pct);
+  setText('rangeValue', rangeEst, '');
+  setText('rangeFull',  rangeFull, '');
 
-  // Stats
+  // Electrical
+  const voltage = ovms.getFloat('v.b.voltage', 1);
+  const current = ovms.getFloat('v.b.current', 1);
+  let   power   = ovms.getFloat('v.b.power', 2);
+  if (power === null && voltage !== null && current !== null)
+    power = parseFloat((voltage * current / 1000).toFixed(2));
+
   setText('battVoltage', voltage, 'V');
   setText('battCurrent', current, 'A');
+  setText('battPower',   power !== null ? (power < 0 ? power : '+' + power) : null, 'kW');
+
+  // Health & capacity
+  const health   = ovms.getFloat('v.b.soh', 1) ?? ovms.getFloat('v.b.health', 1);
+  const cac      = ovms.getFloat('v.b.cac', 1);
+  const capacity = ovms.getFloat('v.b.capacity', 1);
+  const cycles   = ovms.get('v.b.cycles');
+
+  setText('battHealth',   health,   '%');
+  setText('battCac',      cac,      'Ah');
+  setText('battCapacity', capacity, 'kWh');
+  setText('battCycles',   cycles,   '');
+
+  // Temperature
+  const temp    = ovms.getFloat('v.b.temp', 1);
+  const tempMin = ovms.getFloat('v.b.temp.min', 1);
+  const tempMax = ovms.getFloat('v.b.temp.max', 1);
+  const mTemp   = ovms.getFloat('v.m.temp', 1);
+
   setText('battTemp',    temp,    '°C');
-  setText('battHealth',  health,  '%');
-  setText('battPower',   power,   'kW');
+  setText('battTempMin', tempMin, '°C');
+  setText('battTempMax', tempMax, '°C');
+  setText('motorTemp',   mTemp,   '°C');
+
+  // Energy statistics
+  const eUsed  = ovms.getFloat('v.b.energy.used', 2);
+  const eRecd  = ovms.getFloat('v.b.energy.recd', 2);
+  const cUsed  = ovms.getFloat('v.b.coulomb.used', 1);
+  const cRecd  = ovms.getFloat('v.b.coulomb.recd', 1);
+
+  setText('battEnergyUsed',   eUsed,  'kWh');
+  setText('battEnergyRecd',   eRecd,  'kWh');
+  setText('battCoulombUsed',  cUsed,  'Ah');
+  setText('battCoulombRecd',  cRecd,  'Ah');
+
+  // 12V aux battery
+  const v12v    = ovms.getFloat('v.b.12v.voltage', 2);
+  const i12v    = ovms.getFloat('v.b.12v.current', 2);
+  const s12v    = ovms.get('v.b.12v.state');
+
+  setText('batt12vVoltage', v12v, 'V');
+  setText('batt12vCurrent', i12v, 'A');
+  setText('batt12vState',   s12v, '');
 }
 
 function updateCharging() {
@@ -217,4 +266,11 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+function showDebug(msg) {
+  const d = document.getElementById('debugLog');
+  if (!d) return;
+  const ts = new Date().toLocaleTimeString('no-NO');
+  d.textContent = `[${ts}] ${msg}\n` + d.textContent;
 }

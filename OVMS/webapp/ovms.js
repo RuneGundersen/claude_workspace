@@ -1,5 +1,4 @@
-// OVMS MQTT Service
-// Handles connection to OVMS broker and metric subscriptions
+// OVMS MQTT Service — direct WebSocket MQTT via mqtt.js
 
 class OVMSService {
   constructor(config) {
@@ -8,8 +7,7 @@ class OVMSService {
     this.connected = false;
     this.metrics = {};
     this.listeners = {};
-    this.heartbeatInterval = null;
-    this.topicPrefix = `ovms/${config.username}/${config.vehicleId}`;
+    this.topicPrefix = config.vehicleId;  // OVMS v2 format: EV88283metric/...
   }
 
   on(event, fn) {
@@ -23,93 +21,62 @@ class OVMSService {
 
   connect() {
     const opts = {
-      clientId:  this.config.clientId,
-      username:  this.config.username,
-      password:  this.config.password,
-      clean:     true,
+      clientId:        this.config.clientId,
+      username:        this.config.username,
+      password:        this.config.password,
+      clean:           true,
       reconnectPeriod: 5000,
-      connectTimeout:  10000,
+      connectTimeout:  15000,
     };
 
+    this.emit('reconnecting');
     this.client = mqtt.connect(this.config.broker, opts);
 
     this.client.on('connect', () => {
       this.connected = true;
       this.emit('connected');
-      this._subscribe();
+      this.client.subscribe(`${this.topicPrefix}metric/#`);
+      this.client.subscribe(`${this.topicPrefix}event/#`);
       this._startHeartbeat();
     });
 
-    this.client.on('disconnect', () => {
-      this.connected = false;
-      this.emit('disconnected');
-      this._stopHeartbeat();
-    });
-
+    this.client.on('close',     () => { this.connected = false; this.emit('disconnected'); });
     this.client.on('reconnect', () => this.emit('reconnecting'));
-
-    this.client.on('error', err => this.emit('error', err.message));
+    this.client.on('error',     e  => this.emit('error', e.message || String(e)));
 
     this.client.on('message', (topic, payload) => {
       const value = payload.toString();
-      const metricKey = this._topicToMetric(topic);
-      if (metricKey) {
-        this.metrics[metricKey] = value;
-        this.emit('metric', { key: metricKey, value, topic });
-        this.emit(`metric:${metricKey}`, value);
-      }
+      const key   = this._topicToMetric(topic);
+      if (!key) return;
+      this.metrics[key] = value;
+      this.emit('metric', { key, value, topic });
+      this.emit(`metric:${key}`, value);
     });
   }
 
   disconnect() {
     this._stopHeartbeat();
-    if (this.client) this.client.end();
-  }
-
-  _subscribe() {
-    const prefix = this.topicPrefix;
-    // Subscribe to all metrics
-    this.client.subscribe(`${prefix}/metric/#`);
-    // Subscribe to notifications
-    this.client.subscribe(`${prefix}/notify/#`);
+    if (this.client) this.client.end(true);
   }
 
   _startHeartbeat() {
-    // OVMS requires a heartbeat every ~60s to keep client alive
-    const prefix = this.topicPrefix;
-    const clientTopic = `${prefix}/client/${this.config.clientId}/active`;
-    const ping = () => this.client.publish(clientTopic, '1', { retain: false });
+    const topic = `${this.topicPrefix}/client/${this.config.clientId}/active`; // keepalive
+    const ping = () => { if (this.connected) this.client.publish(topic, '1'); };
     ping();
-    this.heartbeatInterval = setInterval(ping, 55000);
+    this._hb = setInterval(ping, 55000);
   }
 
   _stopHeartbeat() {
-    if (this.heartbeatInterval) {
-      clearInterval(this.heartbeatInterval);
-      this.heartbeatInterval = null;
-    }
+    if (this._hb) { clearInterval(this._hb); this._hb = null; }
   }
 
-  // Convert MQTT topic back to metric key (slashes → dots)
-  // ovms/user/vehicle/metric/v/b/soc → v.b.soc
   _topicToMetric(topic) {
-    const prefix = `${this.topicPrefix}/metric/`;
+    const prefix = `${this.topicPrefix}metric/`;
     if (!topic.startsWith(prefix)) return null;
     return topic.slice(prefix.length).replace(/\//g, '.');
   }
 
-  get(key) {
-    return this.metrics[key] ?? null;
-  }
-
-  getFloat(key, decimals = 1) {
-    const v = parseFloat(this.metrics[key]);
-    return isNaN(v) ? null : parseFloat(v.toFixed(decimals));
-  }
-
-  getBool(key) {
-    const v = this.metrics[key];
-    if (v === null || v === undefined) return null;
-    return v === '1' || v === 'yes' || v === 'true';
-  }
+  get(key)              { return this.metrics[key] ?? null; }
+  getFloat(key, dec=1)  { const v=parseFloat(this.metrics[key]); return isNaN(v)?null:parseFloat(v.toFixed(dec)); }
+  getBool(key)          { const v=this.metrics[key]; if(v==null)return null; return v==='1'||v==='yes'||v==='true'; }
 }
