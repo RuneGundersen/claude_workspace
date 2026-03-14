@@ -4,10 +4,22 @@ let ovms;
 let map = null;
 let marker = null;
 let updateInterval = null;
+let logger = null;
+let _lastVehicleOn = null;
+let _lastCharging  = null;
 
 // --- Init ---
 document.addEventListener('DOMContentLoaded', () => {
   ovms = new OVMSService(OVMS_CONFIG);
+
+  logger = new OVMSLogger();
+  logger.init().catch(e => showDebug('Logger-feil: ' + e));
+  logger.onTripStart   = () => updateRecordingBadge();
+  logger.onTripEnd     = () => { updateRecordingBadge(); if (_historyTabActive()) refreshHistory(); };
+  logger.onChargeStart = () => updateRecordingBadge();
+  logger.onChargeEnd   = () => { updateRecordingBadge(); if (_historyTabActive()) refreshHistory(); };
+
+  initHistoryUI(logger);
   setupEventHandlers();
   updateStaticInfo();
   connect();
@@ -42,9 +54,34 @@ function setupEventHandlers() {
   });
 
   ovms.on('metric', ({ key }) => {
-    // Live refresh on key metrics
     if (['v.b.soc', 'v.c.charging', 'v.p.latitude', 'v.p.longitude'].includes(key)) {
       refreshUI();
+    }
+  });
+
+  // Auto-start/stop trip logging
+  ovms.on('metric:v.e.on', val => {
+    const isOn = val === '1' || val === 'yes' || val === 'true';
+    if (isOn === _lastVehicleOn) return;
+    _lastVehicleOn = isOn;
+    if (isOn) {
+      logger.startTrip(ovms);
+      showDebug('Tur startet — logger aktivert');
+    } else {
+      logger.endTrip(ovms).then(t => t && showDebug(`Tur avsluttet: ${t.points?.length ?? 0} punkter`));
+    }
+  });
+
+  // Auto-start/stop charge logging
+  ovms.on('metric:v.c.charging', val => {
+    const isCharging = val === '1' || val === 'yes' || val === 'true';
+    if (isCharging === _lastCharging) return;
+    _lastCharging = isCharging;
+    if (isCharging) {
+      logger.startCharge(ovms);
+      showDebug('Ladeøkt startet — logger aktivert');
+    } else {
+      logger.endCharge(ovms).then(c => c && showDebug(`Lading avsluttet: SOC ${c.startSOC}% → ${c.endSOC}%`));
     }
   });
 
@@ -62,6 +99,7 @@ function setupEventHandlers() {
       tab.classList.add('active');
       document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
       if (tab.dataset.tab === 'map') initMap();
+      if (tab.dataset.tab === 'history') refreshHistory();
     });
   });
 }
@@ -266,6 +304,26 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+function updateRecordingBadge() {
+  const badge = document.getElementById('recBadge');
+  if (!badge || !logger) return;
+  if (logger.isRecordingTrip) {
+    badge.textContent = '● REC';
+    badge.className   = 'rec-badge trip';
+    badge.style.display = '';
+  } else if (logger.isRecordingCharge) {
+    badge.textContent = '● CHG';
+    badge.className   = 'rec-badge charge';
+    badge.style.display = '';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function _historyTabActive() {
+  return document.getElementById('panel-history')?.classList.contains('active');
 }
 
 function showDebug(msg) {

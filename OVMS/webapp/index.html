@@ -23,6 +23,7 @@
     </div>
   </div>
   <div class="header-right">
+    <span id="recBadge" class="rec-badge" style="display:none">● REC</span>
     <div class="status-pill">
       <span id="statusDot" class="status-dot offline"></span>
       <span id="statusText">Kobler til...</span>
@@ -37,6 +38,7 @@
   <button class="nav-tab" data-tab="charging">⚡ Lading</button>
   <button class="nav-tab" data-tab="vehicle">🚘 Kjøretøy</button>
   <button class="nav-tab" data-tab="map">🗺 Kart</button>
+  <button class="nav-tab" data-tab="history">📊 Historikk</button>
 </nav>
 
 <!-- Battery Panel -->
@@ -258,6 +260,31 @@
   </div>
 </div>
 
+<!-- History Panel -->
+<div id="panel-history" class="tab-panel">
+  <div class="subtab-bar">
+    <button class="subtab active" data-subtab="trips">🚗 Turer</button>
+    <button class="subtab" data-subtab="charges">⚡ Ladinger</button>
+  </div>
+  <div id="subtab-trips" class="subtab-panel">
+    <div id="tripsList" class="history-list"></div>
+  </div>
+  <div id="subtab-charges" class="subtab-panel" style="display:none">
+    <div id="chargesList" class="history-list"></div>
+  </div>
+</div>
+
+<!-- History detail modal -->
+<div id="historyModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span id="modalTitle" class="modal-title"></span>
+      <button id="modalClose" class="icon-btn">✕</button>
+    </div>
+    <div id="modalContent" class="modal-content"></div>
+  </div>
+</div>
+
 <!-- Debug panel -->
 <div style="margin:12px;background:#111;border:1px solid #333;border-radius:10px;padding:12px;">
   <div style="font-size:11px;color:#888;margin-bottom:6px;">🔧 Tilkoblingslogg</div>
@@ -273,6 +300,8 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="config.js"></script>
 <script src="ovms.js"></script>
+<script src="logger.js"></script>
+<script src="history.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
