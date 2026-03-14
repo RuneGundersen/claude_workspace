@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="theme-color" content="#1a1a2e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <title>Fiat 500e – OVMS</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="header-left">
+    <span class="car-icon-big">🚗</span>
+    <div>
+      <div id="carName" class="car-name">Fiat 500e</div>
+      <div id="carYear" class="car-year">2015</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="status-pill">
+      <span id="statusDot" class="status-dot offline"></span>
+      <span id="statusText">Kobler til...</span>
+    </div>
+    <button id="btnReconnect" class="icon-btn" title="Koble til på nytt">↺</button>
+  </div>
+</header>
+
+<!-- Nav tabs -->
+<nav class="nav-bar">
+  <button class="nav-tab active" data-tab="battery">🔋 Batteri</button>
+  <button class="nav-tab" data-tab="charging">⚡ Lading</button>
+  <button class="nav-tab" data-tab="vehicle">🚘 Kjøretøy</button>
+  <button class="nav-tab" data-tab="map">🗺 Kart</button>
+</nav>
+
+<!-- Battery Panel -->
+<div id="panel-battery" class="tab-panel active">
+
+  <!-- SOC Hero -->
+  <div class="card soc-card">
+    <div class="soc-label">Batterinivå</div>
+    <div id="socValue" class="soc-value">--%</div>
+    <div class="soc-bar-bg">
+      <div id="socBar" class="soc-fill green" style="width:0%"></div>
+    </div>
+    <div class="soc-range">
+      <span>Rekkevidde</span>
+      <span id="rangeValue" class="range-val">-- km</span>
+    </div>
+  </div>
+
+  <!-- Battery stats -->
+  <div class="card">
+    <div class="card-title">Detaljer</div>
+    <div class="stat-grid">
+      <div class="stat-item">
+        <span class="stat-label">Spenning</span>
+        <span id="battVoltage" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Strøm</span>
+        <span id="battCurrent" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Effekt</span>
+        <span id="battPower" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Temp.</span>
+        <span id="battTemp" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Helse</span>
+        <span id="battHealth" class="stat-val">--</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charging Panel -->
+<div id="panel-charging" class="tab-panel">
+  <div class="card">
+    <div class="card-title">Ladestatus</div>
+    <div style="margin-bottom:12px">
+      <span id="chargeBadge" class="charge-badge idle">--</span>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-item">
+        <span class="stat-label">Effekt</span>
+        <span id="chgPower" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Spenning</span>
+        <span id="chgVoltage" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Strøm</span>
+        <span id="chgCurrent" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Type</span>
+        <span id="chgType" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Varighet</span>
+        <span id="chgDuration" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Effektivitet</span>
+        <span id="chgEfficiency" class="stat-val">--</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Vehicle Panel -->
+<div id="panel-vehicle" class="tab-panel">
+  <div class="card">
+    <div class="card-title">Status</div>
+    <div class="badge-row">
+      <span id="vLocked" class="badge">--</span>
+      <span id="vOn" class="badge">--</span>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-item">
+        <span class="stat-label">Hastighet</span>
+        <span id="vSpeed" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Kilometerstand</span>
+        <span id="vOdo" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Gir</span>
+        <span id="vGear" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Kabintemp</span>
+        <span id="vCabin" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Utetemperatur</span>
+        <span id="vAmbient" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">12V batteri</span>
+        <span id="v12v" class="stat-val">--</span>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Kjøretøyinfo</div>
+    <div class="info-row"><span>VIN</span><span id="vin" class="mono">--</span></div>
+  </div>
+</div>
+
+<!-- Map Panel -->
+<div id="panel-map" class="tab-panel">
+  <div class="card map-card">
+    <div class="card-title">Posisjon</div>
+    <div id="gpsCoords" class="gps-coords">Henter posisjon...</div>
+    <div id="mapContainer"></div>
+  </div>
+</div>
+
+<!-- Toast notification -->
+<div id="toast" class="toast"></div>
+
+<!-- Scripts -->
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="config.js"></script>
+<script src="ovms.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
