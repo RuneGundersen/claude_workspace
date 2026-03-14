@@ -4,7 +4,8 @@ let ovms;
 let map = null;
 let marker = null;
 let updateInterval = null;
-let logger = null;
+let logger  = null;
+let alerts  = null;
 let _lastVehicleOn = null;
 let _lastCharging  = null;
 
@@ -19,7 +20,11 @@ document.addEventListener('DOMContentLoaded', () => {
   logger.onChargeStart = () => updateRecordingBadge();
   logger.onChargeEnd   = () => { updateRecordingBadge(); if (_historyTabActive()) refreshHistory(); };
 
+  alerts = new OVMSAlerts();
+  if (alerts.permission === 'granted') alerts.enabled = true;
+
   initHistoryUI(logger);
+  setupNotifUI(alerts);
   setupEventHandlers();
   setupCommandButtons();
   updateStaticInfo();
@@ -54,10 +59,11 @@ function setupEventHandlers() {
     showDebug('ERROR: ' + msg);
   });
 
-  ovms.on('metric', ({ key }) => {
+  ovms.on('metric', ({ key, value }) => {
     if (['v.b.soc', 'v.c.charging', 'v.p.latitude', 'v.p.longitude'].includes(key)) {
       refreshUI();
     }
+    alerts?.check(key, value, ovms);
   });
 
   // Auto-start/stop trip logging
@@ -99,7 +105,7 @@ function setupEventHandlers() {
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       tab.classList.add('active');
       document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
-      if (tab.dataset.tab === 'map') initMap();
+      if (tab.dataset.tab === 'map')     initMap();
       if (tab.dataset.tab === 'history') refreshHistory();
     });
   });
@@ -305,6 +311,77 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+// --- Notifications ---
+function setupNotifUI(alerts) {
+  const btn    = document.getElementById('btnEnableNotif');
+  const status = document.getElementById('notifStatus');
+  const rules  = document.getElementById('notifRules');
+
+  function updatePermUI() {
+    const p = alerts.permission;
+    if (p === 'granted') {
+      status.textContent = '🔔 Varsler er aktivert';
+      status.style.color = 'var(--green)';
+      btn.style.display  = 'none';
+      rules.style.display = '';
+      loadNotifSettings(alerts);
+    } else if (p === 'denied') {
+      status.textContent = '🔕 Varsler blokkert i nettleseren';
+      status.style.color = 'var(--red)';
+      btn.style.display  = 'none';
+    } else if (p === 'unsupported') {
+      status.textContent = 'Varsler støttes ikke av denne nettleseren';
+    } else {
+      status.textContent = 'Trykk for å aktivere push-varsler';
+    }
+  }
+
+  btn.addEventListener('click', async () => {
+    const ok = await alerts.requestPermission();
+    updatePermUI();
+    if (ok) showToast('Varsler aktivert!');
+  });
+
+  document.getElementById('btnSaveNotif')?.addEventListener('click', () => {
+    saveNotifSettings(alerts);
+    showToast('Varselinnstillinger lagret');
+  });
+
+  updatePermUI();
+}
+
+function loadNotifSettings(alerts) {
+  const r = alerts.rules;
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.checked = val; };
+  const setN = (id, val) => { const el = document.getElementById(id); if (el) el.value  = val; };
+  set('ruleChargeStart',   r.chargeStart?.enabled  ?? true);
+  set('ruleChargeDone',    r.chargeDone?.enabled    ?? true);
+  set('ruleSocLow',        r.socLow?.enabled        ?? true);
+  set('ruleSocCritical',   r.socCritical?.enabled   ?? true);
+  set('ruleBattTempHigh',  r.battTempHigh?.enabled  ?? false);
+  set('ruleCarUnlocked',   r.carUnlocked?.enabled   ?? false);
+  setN('threshChargeDone', r.chargeDone?.threshold  ?? 80);
+  setN('threshSocLow',     r.socLow?.threshold      ?? 20);
+  setN('threshSocCritical',r.socCritical?.threshold ?? 10);
+  setN('threshBattTempHigh',r.battTempHigh?.threshold ?? 42);
+}
+
+function saveNotifSettings(alerts) {
+  const get  = id => document.getElementById(id)?.checked ?? false;
+  const getN = id => parseInt(document.getElementById(id)?.value ?? '0');
+  alerts.rules.chargeStart.enabled         = get('ruleChargeStart');
+  alerts.rules.chargeDone.enabled          = get('ruleChargeDone');
+  alerts.rules.chargeDone.threshold        = getN('threshChargeDone');
+  alerts.rules.socLow.enabled              = get('ruleSocLow');
+  alerts.rules.socLow.threshold            = getN('threshSocLow');
+  alerts.rules.socCritical.enabled         = get('ruleSocCritical');
+  alerts.rules.socCritical.threshold       = getN('threshSocCritical');
+  alerts.rules.battTempHigh.enabled        = get('ruleBattTempHigh');
+  alerts.rules.battTempHigh.threshold      = getN('threshBattTempHigh');
+  alerts.rules.carUnlocked.enabled         = get('ruleCarUnlocked');
+  alerts.saveRules();
 }
 
 // --- Commands ---

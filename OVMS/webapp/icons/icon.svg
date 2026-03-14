@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="80" fill="#1a1a2e"/>
+  <!-- Car body -->
+  <rect x="80" y="260" width="352" height="110" rx="20" fill="#4a90d9"/>
+  <!-- Roof -->
+  <path d="M160 260 Q180 180 256 170 Q332 180 352 260Z" fill="#4a90d9"/>
+  <!-- Windows -->
+  <path d="M178 258 Q192 210 230 204 L230 258Z" fill="#0f0f1a" opacity=".7"/>
+  <path d="M244 258 L244 200 Q285 196 308 258Z" fill="#0f0f1a" opacity=".7"/>
+  <!-- Wheels -->
+  <circle cx="160" cy="375" r="42" fill="#0f0f1a"/>
+  <circle cx="160" cy="375" r="26" fill="#2a2a4a"/>
+  <circle cx="352" cy="375" r="42" fill="#0f0f1a"/>
+  <circle cx="352" cy="375" r="26" fill="#2a2a4a"/>
+  <!-- Lightning bolt -->
+  <path d="M245 80 L215 155 L248 155 L215 230 L298 135 L262 135 L290 80Z" fill="#f1c40f"/>
+</svg>

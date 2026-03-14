@@ -13,6 +13,7 @@ function initHistoryUI(logger) {
       document.querySelectorAll('.subtab-panel').forEach(p => p.style.display = 'none');
       btn.classList.add('active');
       document.getElementById('subtab-' + btn.dataset.subtab).style.display = '';
+      if (btn.dataset.subtab === 'stats') renderStats();
     });
   });
 

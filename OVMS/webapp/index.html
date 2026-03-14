@@ -266,12 +266,53 @@
   <div class="subtab-bar">
     <button class="subtab active" data-subtab="trips">🚗 Turer</button>
     <button class="subtab" data-subtab="charges">⚡ Ladinger</button>
+    <button class="subtab" data-subtab="stats">📈 Statistikk</button>
   </div>
   <div id="subtab-trips" class="subtab-panel">
     <div id="tripsList" class="history-list"></div>
   </div>
   <div id="subtab-charges" class="subtab-panel" style="display:none">
     <div id="chargesList" class="history-list"></div>
+  </div>
+  <div id="subtab-stats" class="subtab-panel" style="display:none">
+
+    <!-- Summary -->
+    <div class="card">
+      <div class="card-title">Oppsummering</div>
+      <div class="stat-grid">
+        <div class="stat-item"><span class="stat-label">Total kjørt</span><span id="statTotalKm" class="stat-val">--</span></div>
+        <div class="stat-item"><span class="stat-label">Snitt rekkevidde</span><span id="statAvgRange" class="stat-val">--</span></div>
+        <div class="stat-item"><span class="stat-label">Total ladet</span><span id="statTotalChg" class="stat-val">--</span></div>
+        <div class="stat-item"><span class="stat-label">Snitt per lading</span><span id="statAvgChg" class="stat-val">--</span></div>
+        <div class="stat-item"><span class="stat-label">Antall turer</span><span id="statTrips" class="stat-val">--</span></div>
+        <div class="stat-item"><span class="stat-label">Antall ladinger</span><span id="statCharges" class="stat-val">--</span></div>
+      </div>
+    </div>
+
+    <!-- Trip chart -->
+    <div class="card">
+      <div class="card-title">Turer — distanse og forbruk</div>
+      <div id="chartTripsWrap" class="chart-wrap">
+        <canvas id="chartTrips"></canvas>
+      </div>
+    </div>
+
+    <!-- Charge chart -->
+    <div class="card">
+      <div class="card-title">Ladeøkter — energi og slutt-SOC</div>
+      <div id="chartChargesWrap" class="chart-wrap">
+        <canvas id="chartCharges"></canvas>
+      </div>
+    </div>
+
+    <!-- SOC trend -->
+    <div class="card">
+      <div class="card-title">SOC-trend over turer</div>
+      <div id="chartSocWrap" class="chart-wrap">
+        <canvas id="chartSocTrend"></canvas>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -364,6 +405,46 @@
     <div id="cmdLog" class="cmd-log"></div>
   </div>
 
+  <!-- Notification settings -->
+  <div class="card">
+    <div class="card-title">Varsler</div>
+    <div id="notifPermRow" class="notif-perm-row">
+      <span id="notifStatus" class="notif-status">Varsler ikke aktivert</span>
+      <button id="btnEnableNotif" class="btn-notif">🔔 Aktiver varsler</button>
+    </div>
+    <div id="notifRules" class="notif-rules" style="display:none">
+      <label class="notif-rule">
+        <input type="checkbox" id="ruleChargeStart" checked>
+        <span>⚡ Lading startet</span>
+      </label>
+      <label class="notif-rule">
+        <input type="checkbox" id="ruleChargeDone" checked>
+        <span>✅ Lading fullført</span>
+        <span class="notif-threshold">ved &ge; <input type="number" id="threshChargeDone" value="80" min="50" max="100" class="notif-input">%</span>
+      </label>
+      <label class="notif-rule">
+        <input type="checkbox" id="ruleSocLow" checked>
+        <span>🔋 Lavt batteri</span>
+        <span class="notif-threshold">under <input type="number" id="threshSocLow" value="20" min="5" max="50" class="notif-input">%</span>
+      </label>
+      <label class="notif-rule">
+        <input type="checkbox" id="ruleSocCritical" checked>
+        <span>🚨 Kritisk lavt batteri</span>
+        <span class="notif-threshold">under <input type="number" id="threshSocCritical" value="10" min="5" max="20" class="notif-input">%</span>
+      </label>
+      <label class="notif-rule">
+        <input type="checkbox" id="ruleBattTempHigh">
+        <span>🌡️ Høy batteritemperatur</span>
+        <span class="notif-threshold">over <input type="number" id="threshBattTempHigh" value="42" min="30" max="60" class="notif-input">°C</span>
+      </label>
+      <label class="notif-rule">
+        <input type="checkbox" id="ruleCarUnlocked">
+        <span>🔓 Bilen låst opp</span>
+      </label>
+      <button id="btnSaveNotif" class="btn-notif-save">Lagre innstillinger</button>
+    </div>
+  </div>
+
 </div>
 
 <!-- History detail modal -->
@@ -390,10 +471,18 @@
 <!-- Scripts -->
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script src="config.js"></script>
 <script src="ovms.js"></script>
 <script src="logger.js"></script>
 <script src="history.js"></script>
+<script src="notifications.js"></script>
+<script src="charts.js"></script>
 <script src="app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(e => console.warn('SW:', e));
+  }
+</script>
 </body>
 </html>
