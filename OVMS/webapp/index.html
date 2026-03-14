@@ -39,6 +39,7 @@
   <button class="nav-tab" data-tab="vehicle">🚘 Kjøretøy</button>
   <button class="nav-tab" data-tab="map">🗺 Kart</button>
   <button class="nav-tab" data-tab="history">📊 Historikk</button>
+  <button class="nav-tab" data-tab="control">🎮 Kontroll</button>
 </nav>
 
 <!-- Battery Panel -->
@@ -272,6 +273,97 @@
   <div id="subtab-charges" class="subtab-panel" style="display:none">
     <div id="chargesList" class="history-list"></div>
   </div>
+</div>
+
+<!-- Control Panel -->
+<div id="panel-control" class="tab-panel">
+
+  <!-- Response banner -->
+  <div id="cmdResponse" class="cmd-response" style="display:none"></div>
+
+  <!-- Climate -->
+  <div class="card">
+    <div class="card-title">Klima</div>
+    <div class="cmd-grid">
+      <button class="cmd-btn" data-cmd="climate on" data-label="Forvarming på"
+              data-confirm="Start forvarming av bilen?">
+        <span class="cmd-icon">🔥</span>
+        <span class="cmd-label">Forvarming på</span>
+      </button>
+      <button class="cmd-btn" data-cmd="climate off" data-label="Klima av"
+              data-confirm="Slå av klimaanlegget?">
+        <span class="cmd-icon">❄️</span>
+        <span class="cmd-label">Klima av</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Doors -->
+  <div class="card">
+    <div class="card-title">Dører</div>
+    <div class="cmd-grid">
+      <button class="cmd-btn cmd-btn--safe" data-cmd="lock" data-label="Lås"
+              data-confirm="Lås bilen?">
+        <span class="cmd-icon">🔒</span>
+        <span class="cmd-label">Lås</span>
+      </button>
+      <button class="cmd-btn cmd-btn--warn" data-cmd="unlock" data-label="Lås opp"
+              data-confirm="Lås opp bilen?">
+        <span class="cmd-icon">🔓</span>
+        <span class="cmd-label">Lås opp</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Charging -->
+  <div class="card">
+    <div class="card-title">Lading</div>
+    <div class="cmd-grid">
+      <button class="cmd-btn cmd-btn--safe" data-cmd="charge start" data-label="Start lading"
+              data-confirm="Start lading?">
+        <span class="cmd-icon">⚡</span>
+        <span class="cmd-label">Start lading</span>
+      </button>
+      <button class="cmd-btn cmd-btn--warn" data-cmd="charge stop" data-label="Stopp lading"
+              data-confirm="Stopp lading?">
+        <span class="cmd-icon">⏹</span>
+        <span class="cmd-label">Stopp lading</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Other -->
+  <div class="card">
+    <div class="card-title">Annet</div>
+    <div class="cmd-grid">
+      <button class="cmd-btn" data-cmd="wakeup" data-label="Vekk bilen"
+              data-confirm="Send vekk-signal til bilen?">
+        <span class="cmd-icon">💡</span>
+        <span class="cmd-label">Vekk bilen</span>
+      </button>
+      <button class="cmd-btn" data-cmd="stat" data-label="Hent status">
+        <span class="cmd-icon">📋</span>
+        <span class="cmd-label">Hent status</span>
+      </button>
+      <button class="cmd-btn" data-cmd="homelink 1" data-label="Homelink 1"
+              data-confirm="Send Homelink 1?">
+        <span class="cmd-icon">📡</span>
+        <span class="cmd-label">Homelink 1</span>
+      </button>
+      <button class="cmd-btn" data-cmd="homelink 2" data-label="Homelink 2"
+              data-confirm="Send Homelink 2?">
+        <span class="cmd-icon">📡</span>
+        <span class="cmd-label">Homelink 2</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Command log -->
+  <div class="card">
+    <div class="card-title">Kommandologg</div>
+    <div id="cmdLog" class="cmd-log"></div>
+  </div>
+
 </div>
 
 <!-- History detail modal -->

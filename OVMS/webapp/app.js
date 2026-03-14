@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   initHistoryUI(logger);
   setupEventHandlers();
+  setupCommandButtons();
   updateStaticInfo();
   connect();
 });
@@ -304,6 +305,67 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+// --- Commands ---
+function setupCommandButtons() {
+  document.querySelectorAll('.cmd-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const cmd     = btn.dataset.cmd;
+      const label   = btn.dataset.label || cmd;
+      const confirm = btn.dataset.confirm;
+
+      if (confirm && !window.confirm(confirm)) return;
+
+      if (!ovms.connected) {
+        showCmdResponse('error', 'Ikke tilkoblet — kan ikke sende kommando');
+        return;
+      }
+
+      // Disable buttons, show spinner
+      document.querySelectorAll('.cmd-btn').forEach(b => b.disabled = true);
+      btn.classList.add('loading');
+      showCmdResponse('pending', `Sender: ${label}...`);
+
+      try {
+        const response = await ovms.sendCommand(cmd);
+        const msg = response?.trim() || 'OK';
+        showCmdResponse('success', msg);
+        logCommand(label, 'success', msg);
+        showDebug(`Kommando OK [${label}]: ${msg}`);
+      } catch (e) {
+        showCmdResponse('error', e.message);
+        logCommand(label, 'error', e.message);
+        showDebug(`Kommando feil [${label}]: ${e.message}`);
+      } finally {
+        document.querySelectorAll('.cmd-btn').forEach(b => b.disabled = false);
+        btn.classList.remove('loading');
+      }
+    });
+  });
+}
+
+function showCmdResponse(type, msg) {
+  const el = document.getElementById('cmdResponse');
+  el.style.display = '';
+  el.className = 'cmd-response cmd-response--' + type;
+  const icons = { pending: '⏳', success: '✅', error: '❌' };
+  el.textContent = (icons[type] || '') + ' ' + msg;
+  if (type === 'success') setTimeout(() => { el.style.display = 'none'; }, 6000);
+}
+
+function logCommand(label, status, msg) {
+  const log = document.getElementById('cmdLog');
+  if (!log) return;
+  const ts   = new Date().toLocaleTimeString('no-NO');
+  const row  = document.createElement('div');
+  row.className = 'cmd-log-row ' + status;
+  row.innerHTML = `<span class="cmd-log-time">${ts}</span>
+                   <span class="cmd-log-label">${label}</span>
+                   <span class="cmd-log-result">${msg}</span>`;
+  log.prepend(row);
+  // Keep max 20 entries
+  while (log.children.length > 20) log.removeChild(log.lastChild);
 }
 
 function updateRecordingBadge() {
