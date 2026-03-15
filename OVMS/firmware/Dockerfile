@@ -50,15 +50,10 @@ COPY vehicle_fiat500e.cpp /build/ovms3/vehicle/OVMS.V3/components/vehicle_fiat50
 
 WORKDIR /build/ovms3/vehicle/OVMS.V3
 
-# Generate sdkconfig from Kconfig defaults without opening the interactive
-# menu (which requires a real terminal and fails in Docker).
-# `make defconfig` writes sdkconfig silently; subsequent `make` sees it
-# already present and skips the menuconfig step entirely.
-# TERM=dumb suppresses any residual curses probes.
+# OVMS commits its own sdkconfig — do NOT run `make defconfig` which would
+# overwrite it with bare IDF defaults and strip PPP / other required options.
+# TERM=dumb suppresses any residual curses probes in case make checks it.
 ENV TERM=dumb
-
-RUN bash -c '. $IDF_PATH/export.sh && make defconfig' \
-    && echo "✓ sdkconfig generated"
 
 # Suppress format-truncation warning only in the mongoose component,
 # so we don't override global CFLAGS (which would break include paths).
