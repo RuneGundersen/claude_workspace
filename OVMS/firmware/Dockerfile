@@ -53,16 +53,24 @@ COPY vehicle_fiat500e.cpp /build/ovms3/vehicle/OVMS.V3/components/vehicle_fiat50
 WORKDIR /build/ovms3/vehicle/OVMS.V3
 
 # Seed the sdkconfig from OVMS defaults for hardware rev 3.1 (standard module).
-# Run `make menuconfig` locally if you need to tweak options before building.
 RUN cp sdkconfig.default.hw31 sdkconfig 2>/dev/null \
     || cp sdkconfig.default     sdkconfig 2>/dev/null \
-    || echo "No default sdkconfig found — proceeding without one"
+    || echo "No default sdkconfig — idf.py will generate one"
 
-# Build.  The `. $IDF_PATH/export.sh` call activates the cross-compiler and
-# Python venv that ship inside the espressif/idf image.
-RUN . $IDF_PATH/export.sh \
-    && make -j$(nproc) 2>&1 | tee /build/build.log \
-    && echo "✓ Build succeeded"
+# Build.  Use `set -eo pipefail` so any failure is fatal (piping to tee
+# previously swallowed the make exit code).  idf.py is the CMake-based
+# frontend that ships with ESP-IDF 4.x and is what the base image expects.
+RUN bash -eo pipefail -c '\
+    . $IDF_PATH/export.sh && \
+    idf.py build 2>&1 | tee /tmp/build.log; \
+    STATUS=${PIPESTATUS[0]}; \
+    if [ $STATUS -ne 0 ]; then \
+        echo ""; \
+        echo "BUILD FAILED (exit $STATUS) — last 40 lines:"; \
+        tail -40 /tmp/build.log; \
+        exit $STATUS; \
+    fi && \
+    echo "✓ Build succeeded"'
 
 
 # ── Stage 4: runtime — copy binary to mounted volume ─────────────────────────
