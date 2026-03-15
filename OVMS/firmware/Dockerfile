@@ -57,20 +57,11 @@ RUN cp sdkconfig.default.hw31 sdkconfig 2>/dev/null \
     || cp sdkconfig.default     sdkconfig 2>/dev/null \
     || echo "No default sdkconfig — idf.py will generate one"
 
-# Build.  Use `set -eo pipefail` so any failure is fatal (piping to tee
-# previously swallowed the make exit code).  idf.py is the CMake-based
-# frontend that ships with ESP-IDF 4.x and is what the base image expects.
-RUN bash -eo pipefail -c '\
-    . $IDF_PATH/export.sh && \
-    idf.py build 2>&1 | tee /tmp/build.log; \
-    STATUS=${PIPESTATUS[0]}; \
-    if [ $STATUS -ne 0 ]; then \
-        echo ""; \
-        echo "BUILD FAILED (exit $STATUS) — last 40 lines:"; \
-        tail -40 /tmp/build.log; \
-        exit $STATUS; \
-    fi && \
-    echo "✓ Build succeeded"'
+# OVMS uses the legacy ESP-IDF make build system (not idf.py/CMake).
+# bash -c ensures pipefail applies; the dot-source activates the
+# xtensa cross-compiler that ships in the espressif/idf base image.
+RUN bash -c '. $IDF_PATH/export.sh && make -j$(nproc)' \
+    && echo "✓ Build succeeded"
 
 
 # ── Stage 4: runtime — copy binary to mounted volume ─────────────────────────

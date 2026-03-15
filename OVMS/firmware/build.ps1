@@ -10,10 +10,11 @@ $OUT   = "$PSScriptRoot\output"
 Write-Host "Pulling latest changes..." -ForegroundColor Cyan
 git -C "$PSScriptRoot\..\.." pull
 
-# --no-cache-filter forces only the compile stage to re-run;
-# the slow OVMS clone stage stays cached.
+# --no-cache-filter forces only the compile stage to re-run.
+# --progress=plain shows full build output so errors are visible.
 Write-Host "Building Docker image..." -ForegroundColor Cyan
 docker build --no-cache-filter builder --no-cache-filter final `
+    --progress=plain `
     -t $IMAGE $PSScriptRoot
 
 Write-Host "`nExtracting firmware to $OUT ..." -ForegroundColor Cyan
