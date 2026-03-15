@@ -1,0 +1,90 @@
+1773481505: mosquitto version 2.1.2 starting
+1773481505: Config loaded from C:\claude_workspace\OVMS\mosquitto\mosquitto.conf.
+1773481505: Bridge support available.
+1773481505: Persistence support available.
+1773481505: TLS support available.
+1773481505: TLS-PSK support available.
+1773481505: Websockets support available.
+1773481505: Plugin builtin-security has registered to receive 'basic-auth' events.
+1773481505: Opening ipv6 listen socket on port 1883.
+1773481505: Opening ipv4 listen socket on port 1883.
+1773481505: Opening ipv6 listen socket on port 8083.
+1773481505: Opening ipv4 listen socket on port 8083.
+1773481505: mosquitto version 2.1.2 running
+1773481522: New connection from ::1:61471 on port 8083.
+1773481522: Client ::1 [::1:61471] disconnected: connection closed by client.
+1773481538: New connection from ::1:59648 on port 8083.
+1773481538: New client connected from ::1:59648 as ovms-webapp-32b2370e (p4, c1, k60, u'EV88283').
+1773481539: New connection from ::1:59271 on port 8083.
+1773481539: New client connected from ::1:59271 as ovms-webapp-8f35bb77 (p4, c1, k60, u'EV88283').
+1773481956: Client ovms-webapp-8f35bb77 [::1:59271] disconnected: exceeded timeout.
+1773481956: Client ovms-webapp-32b2370e [::1:59648] disconnected: exceeded timeout.
+1773481962: New connection from ::1:50836 on port 8083.
+1773481962: New connection from ::1:65223 on port 8083.
+1773481983: New connection from ::1:62816 on port 8083.
+1773481983: New connection from ::1:61816 on port 8083.
+1773481986: New client connected from ::1:61816 as ovms-webapp-32b2370e (p4, c1, k60, u'EV88283').
+1773481986: New client connected from ::1:62816 as ovms-webapp-8f35bb77 (p4, c1, k60, u'EV88283').
+1773481992: Client ::1 [::1:50836] disconnected: exceeded timeout.
+1773481992: Client ::1 [::1:65223] disconnected: exceeded timeout.
+1773482076: Client ovms-webapp-32b2370e [::1:61816] disconnected: exceeded timeout.
+1773482076: Client ovms-webapp-8f35bb77 [::1:62816] disconnected: exceeded timeout.
+1773482082: New connection from ::1:64293 on port 8083.
+1773482082: New connection from ::1:59232 on port 8083.
+1773482103: New connection from ::1:55180 on port 8083.
+1773482104: New connection from ::1:59040 on port 8083.
+1773482106: New client connected from ::1:55180 as ovms-webapp-32b2370e (p4, c1, k60, u'EV88283').
+1773482106: New client connected from ::1:59040 as ovms-webapp-8f35bb77 (p4, c1, k60, u'EV88283').
+1773482112: Client ::1 [::1:64293] disconnected: exceeded timeout.
+1773482112: Client ::1 [::1:59232] disconnected: exceeded timeout.
+1773482196: Client ovms-webapp-32b2370e [::1:55180] disconnected: exceeded timeout.
+1773482196: Client ovms-webapp-8f35bb77 [::1:59040] disconnected: exceeded timeout.
+1773482202: New connection from ::1:56319 on port 8083.
+1773482202: New connection from ::1:62791 on port 8083.
+1773482223: New connection from ::1:58238 on port 8083.
+1773482223: New connection from ::1:51305 on port 8083.
+1773482226: New client connected from ::1:58238 as ovms-webapp-32b2370e (p4, c1, k60, u'EV88283').
+1773482226: New client connected from ::1:51305 as ovms-webapp-8f35bb77 (p4, c1, k60, u'EV88283').
+1773482232: Client ::1 [::1:56319] disconnected: exceeded timeout.
+1773482232: Client ::1 [::1:62791] disconnected: exceeded timeout.
+1773482316: Client ovms-webapp-32b2370e [::1:58238] disconnected: exceeded timeout.
+1773482316: Client ovms-webapp-8f35bb77 [::1:51305] disconnected: exceeded timeout.
+1773482322: New connection from ::1:60736 on port 8083.
+1773482322: New connection from ::1:50658 on port 8083.
+1773482344: New connection from ::1:52043 on port 8083.
+1773482344: New connection from ::1:62534 on port 8083.
+1773482346: New client connected from ::1:62534 as ovms-webapp-8f35bb77 (p4, c1, k60, u'EV88283').
+1773482346: New client connected from ::1:52043 as ovms-webapp-32b2370e (p4, c1, k60, u'EV88283').
+1773482352: Client ::1 [::1:60736] disconnected: exceeded timeout.
+1773482353: Client ::1 [::1:50658] disconnected: exceeded timeout.
+1773482436: Client ovms-webapp-8f35bb77 [::1:62534] disconnected: exceeded timeout.
+1773482436: Client ovms-webapp-32b2370e [::1:52043] disconnected: exceeded timeout.
+1773482442: New connection from ::1:54865 on port 8083.
+1773482442: New connection from ::1:49738 on port 8083.
+1773482463: New connection from ::1:56577 on port 8083.
+1773482463: New connection from ::1:61848 on port 8083.
+1773482466: New client connected from ::1:56577 as ovms-webapp-32b2370e (p4, c1, k60, u'EV88283').
+1773482466: New client connected from ::1:61848 as ovms-webapp-8f35bb77 (p4, c1, k60, u'EV88283').
+1773482472: Client ::1 [::1:54865] disconnected: exceeded timeout.
+1773482473: Client ::1 [::1:49738] disconnected: exceeded timeout.
+1773482556: Client ovms-webapp-32b2370e [::1:56577] disconnected: exceeded timeout.
+1773482556: Client ovms-webapp-8f35bb77 [::1:61848] disconnected: exceeded timeout.
+1773482562: New connection from ::1:53024 on port 8083.
+1773482562: New connection from ::1:53693 on port 8083.
+1773482583: New connection from ::1:65019 on port 8083.
+1773482583: New connection from ::1:56196 on port 8083.
+1773482586: New client connected from ::1:56196 as ovms-webapp-8f35bb77 (p4, c1, k60, u'EV88283').
+1773482586: New client connected from ::1:65019 as ovms-webapp-32b2370e (p4, c1, k60, u'EV88283').
+1773482592: Client ::1 [::1:53024] disconnected: exceeded timeout.
+1773482593: Client ::1 [::1:53693] disconnected: exceeded timeout.
+1773482766: New connection from ::1:59560 on port 8083.
+1773482766: Client ovms-webapp-32b2370e [::1:65019] disconnected: session taken over.
+1773482766: New client connected from ::1:59560 as ovms-webapp-32b2370e (p4, c1, k60, u'EV88283').
+1773482766: New connection from ::1:55961 on port 8083.
+1773482766: Client ovms-webapp-8f35bb77 [::1:56196] disconnected: session taken over.
+1773482766: New client connected from ::1:55961 as ovms-webapp-8f35bb77 (p4, c1, k60, u'EV88283').
+1773482856: Client ovms-webapp-32b2370e [::1:59560] disconnected: exceeded timeout.
+1773482857: Client ovms-webapp-8f35bb77 [::1:55961] disconnected: exceeded timeout.
+1773483305: Saving in-memory database to C:\claude_workspace\OVMS\mosquitto\data\\mosquitto.db.
+1773485106: Saving in-memory database to C:\claude_workspace\OVMS\mosquitto\data\\mosquitto.db.
+1773486907: Saving in-memory database to C:\claude_workspace\OVMS\mosquitto\data\\mosquitto.db.
