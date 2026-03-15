@@ -19,6 +19,7 @@
 #define __VEHICLE_FIAT500E_H__
 
 #include "vehicle.h"
+#include "vehicle_poller.h"
 
 using namespace std;
 
@@ -58,9 +59,8 @@ class OvmsVehicleFiat500e : public OvmsVehicle
     void IncomingFrameCan2(CAN_frame_t* p_frame) override;
 
     // UDS poll reply handler
-    void IncomingPollReply(canbus* bus, uint16_t type, uint16_t pid,
-                           uint8_t* data, uint8_t length,
-                           uint16_t mlremain) override;
+    void IncomingPollReply(const OvmsPoller::poll_job_t &job,
+                           uint8_t* data, uint8_t length) override;
 
     vehicle_command_t CommandWakeup() override;
     vehicle_command_t CommandStartCharge() override;

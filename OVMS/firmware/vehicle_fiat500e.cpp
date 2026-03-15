@@ -74,14 +74,14 @@ static const char *TAG = "v-fiat500e";
 //       in the static table; it is added dynamically in the constructor when
 //       the config value is known.
 
-static const OvmsVehicle::poll_pid_t bpcm_polls[] = {
+static const OvmsPoller::poll_pid_t bpcm_polls[] = {
   // { txid,          rxid,          type,                           pid,    {s0,s1, s2,s3}, bus, proto }
-  { FT5E_BPCM_TXID, FT5E_BPCM_RXID, VEHICLE_POLL_TYPE_READDATABYID, 0x2001, {0, 30, 60, 0}, 1, ISOTP_STD },
+  { FT5E_BPCM_TXID, FT5E_BPCM_RXID, VEHICLE_POLL_TYPE_READDATA, 0x2001, {0, 30, 60, 0}, 1, ISOTP_STD },
   POLL_LIST_END
 };
 
 // Dynamic poll table (room for pack status + cell DID + end marker)
-static OvmsVehicle::poll_pid_t bpcm_polls_dyn[3];
+static OvmsPoller::poll_pid_t bpcm_polls_dyn[3];
 
 
 // ── Constructor ────────────────────────────────────────────────────────────
@@ -98,7 +98,7 @@ OvmsVehicleFiat500e::OvmsVehicleFiat500e()
   // OVMS standard metrics v.b.c.voltage[n] are automatically published to
   // MQTT as e.g. EV88283metric/v/b/c/voltage/0 … /95 once BmsSetCellVoltage()
   // is called.  BmsSetCellDefaultThresholds sets the warning/alert thresholds.
-  BmsSetCellDefaultThresholds("voltage", 2.5, 2.0, 4.2, 4.3);
+  BmsSetCellDefaultThresholdsVoltage(0.050f, 0.100f);  // 50 mV warn, 100 mV alert
   BmsSetCellArrangementVoltage(FT5E_CELL_COUNT, 1);  // 96 cells, 1 per module
 
   // Informational metrics
@@ -113,13 +113,13 @@ OvmsVehicleFiat500e::OvmsVehicleFiat500e()
 
   // ── Build dynamic poll table ──────────────────────────────────────────────
   // Entry 0: pack status DID 0x2001 (always on)
-  memcpy(&bpcm_polls_dyn[0], &bpcm_polls[0], sizeof(OvmsVehicle::poll_pid_t));
+  memcpy(&bpcm_polls_dyn[0], &bpcm_polls[0], sizeof(OvmsPoller::poll_pid_t));
 
   if (m_cell_did != 0) {
     // Entry 1: cell voltage DID (poll every 30 s when on, 60 s charging)
     bpcm_polls_dyn[1] = {
       FT5E_BPCM_TXID, FT5E_BPCM_RXID,
-      VEHICLE_POLL_TYPE_READDATABYID, m_cell_did,
+      VEHICLE_POLL_TYPE_READDATA, m_cell_did,
       {0, 30, 60, 0}, 1, ISOTP_STD
     };
     bpcm_polls_dyn[2] = POLL_LIST_END;
@@ -234,11 +234,10 @@ void OvmsVehicleFiat500e::SendBpcmRequest(uint16_t did)
 
 // ── UDS poll reply handler ─────────────────────────────────────────────────
 
-void OvmsVehicleFiat500e::IncomingPollReply(canbus* bus, uint16_t type,
-                                             uint16_t pid,
-                                             uint8_t* data, uint8_t length,
-                                             uint16_t mlremain)
+void OvmsVehicleFiat500e::IncomingPollReply(const OvmsPoller::poll_job_t &job,
+                                             uint8_t* data, uint8_t length)
   {
+  uint16_t pid = job.pid;
   switch (pid) {
 
     // ── DID 0x2001: BPCM pack status ────────────────────────────────────────
@@ -321,8 +320,8 @@ void OvmsVehicleFiat500e::DecodeCellVoltages(uint16_t did,
   }
 
   m_cell_count = decoded;
-  MyMetrics.FindMetric("xse.b.cell_count")->SetValue(decoded);
-  MyMetrics.FindMetric("xse.b.cell_did")->SetValue((int)did);
+  MyMetrics.Find("xse.b.cell_count")->SetValue(decoded);
+  MyMetrics.Find("xse.b.cell_did")->SetValue((int)did);
 
   ESP_LOGI(TAG, "Cell voltages updated: %d/%d cells decoded from DID 0x%04X",
            decoded, FT5E_CELL_COUNT, did);
@@ -354,7 +353,7 @@ void OvmsVehicleFiat500e::xse_cells(int verbosity, OvmsWriter* writer,
 
   // Print cells in a 8-column table
   for (int i = 0; i < FT5E_CELL_COUNT; i++) {
-    OvmsMetric* m = MyMetrics.FindMetric(
+    OvmsMetric* m = MyMetrics.Find(
       ("v.b.c.voltage." + std::to_string(i)).c_str());
     float v = m ? m->AsFloat() : 0.0f;
 
