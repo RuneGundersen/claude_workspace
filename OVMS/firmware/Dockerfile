@@ -60,7 +60,7 @@ ENV TERM=dumb
 RUN bash -c '. $IDF_PATH/export.sh && make defconfig' \
     && echo "✓ sdkconfig generated"
 
-RUN bash -c '. $IDF_PATH/export.sh && make -j$(nproc)' \
+RUN bash -c '. $IDF_PATH/export.sh && make -j$(nproc) CFLAGS=-Wno-format-truncation' \
     && echo "✓ Build succeeded"
 
 
