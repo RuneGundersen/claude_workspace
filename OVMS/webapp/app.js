@@ -1,6 +1,7 @@
 // OVMS Dashboard App Logic
 
 let ovms;
+window._ovms = null;   // exposed for diagnostics.js
 let map = null;
 let marker = null;
 let updateInterval = null;
@@ -12,6 +13,7 @@ let _lastCharging  = null;
 // --- Init ---
 document.addEventListener('DOMContentLoaded', () => {
   ovms = new OVMSService(OVMS_CONFIG);
+  window._ovms = ovms;
 
   logger = new OVMSLogger();
   logger.init().catch(e => showDebug('Logger-feil: ' + e));
@@ -25,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   initHistoryUI(logger);
   setupNotifUI(alerts);
+  initDiagnostics();
   setupEventHandlers();
   setupCommandButtons();
   updateStaticInfo();
@@ -107,6 +110,7 @@ function setupEventHandlers() {
       document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
       if (tab.dataset.tab === 'map')     initMap();
       if (tab.dataset.tab === 'history') refreshHistory();
+      if (tab.dataset.tab === 'diag')    updateDiagOvmsAlerts(ovms);
     });
   });
 }

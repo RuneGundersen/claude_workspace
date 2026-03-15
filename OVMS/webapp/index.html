@@ -40,6 +40,7 @@
   <button class="nav-tab" data-tab="map">🗺 Kart</button>
   <button class="nav-tab" data-tab="history">📊 Historikk</button>
   <button class="nav-tab" data-tab="control">🎮 Kontroll</button>
+  <button class="nav-tab" data-tab="diag">🔧 Diagnose</button>
 </nav>
 
 <!-- Battery Panel -->
@@ -447,6 +448,59 @@
 
 </div>
 
+<!-- Diagnostics Panel -->
+<div id="panel-diag" class="tab-panel">
+
+  <!-- Status banner -->
+  <div id="diagStatus" class="diag-status" style="display:none"></div>
+
+  <!-- Stored DTCs -->
+  <div class="card">
+    <div class="card-title">Lagrede feilkoder (Mode 03)</div>
+    <div class="diag-btn-row">
+      <button id="btnReadDTC" class="cmd-btn">
+        <span class="cmd-icon">🔍</span>
+        <span class="cmd-label">Les feilkoder</span>
+      </button>
+      <button id="btnReadPending" class="cmd-btn">
+        <span class="cmd-icon">🕐</span>
+        <span class="cmd-label">Ventende feil</span>
+      </button>
+    </div>
+    <div id="diagLastScan" class="diag-timestamp"></div>
+    <div id="dtcStoredList" class="dtc-list">
+      <div class="dtc-empty">Trykk «Les feilkoder» for å skanne</div>
+    </div>
+  </div>
+
+  <!-- Pending DTCs -->
+  <div class="card">
+    <div class="card-title">Ventende feilkoder (Mode 07)</div>
+    <div id="dtcPendingList" class="dtc-list">
+      <div class="dtc-empty">Trykk «Ventende feil» for å skanne</div>
+    </div>
+  </div>
+
+  <!-- Clear DTCs -->
+  <div class="card">
+    <div class="card-title">Slett feilkoder</div>
+    <p class="diag-warn-text">⚠️ Sletter alle lagrede og ventende feilkoder fra alle ECU-er. Gjør dette bare etter å ha notert kodene.</p>
+    <button id="btnClearDTC" class="cmd-btn cmd-btn--warn" style="width:100%">
+      <span class="cmd-icon">🗑️</span>
+      <span class="cmd-label">Slett alle feilkoder (Mode 04)</span>
+    </button>
+  </div>
+
+  <!-- OVMS Alerts -->
+  <div class="card">
+    <div class="card-title">OVMS-varsler</div>
+    <div id="diagOvmsAlerts" class="dtc-list">
+      <div class="dtc-empty">Ingen aktive varsler</div>
+    </div>
+  </div>
+
+</div>
+
 <!-- History detail modal -->
 <div id="historyModal" class="modal-overlay">
   <div class="modal-box">
@@ -478,6 +532,7 @@
 <script src="history.js"></script>
 <script src="notifications.js"></script>
 <script src="charts.js"></script>
+<script src="diagnostics.js"></script>
 <script src="app.js"></script>
 <script>
   if ('serviceWorker' in navigator) {
