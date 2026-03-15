@@ -58,6 +58,15 @@ WORKDIR /build/ovms3/vehicle/OVMS.V3
 # menuconfig step (which crashes in Docker without a real terminal).
 RUN cp support/sdkconfig.default.hw31 sdkconfig
 
+# console_telnet.h uses MongooseClient as a base class but doesn't include
+# mongoose_client.h (omitted when the class was added in 2026).  Patch it now.
+RUN sed -i 's|#include "ovms_console.h"|#include "mongoose_client.h"\n#include "ovms_console.h"|' \
+        components/console_telnet/src/console_telnet.h && \
+    sed -i 's|auto mglock = console->MongooseLock();|auto mglock = MongooseLock();|' \
+        components/console_telnet/src/console_telnet.cpp && \
+    printf '\n// Stub definitions for builds where CONFIG_HEAP_TASK_TRACKING is unset.\n#ifdef NOGO\nbool module_check_heap_integrity(char* buf, size_t size) { if (buf && size > 0) buf[0] = 0; return true; }\nbool module_check_heap_integrity(int verbosity, OvmsWriter* writer) { return true; }\nbool module_check_heap_alert(int verbosity, OvmsWriter* writer) { return true; }\n#endif\n' \
+        >> main/ovms_module.cpp
+
 # TERM=dumb suppresses residual curses probes.
 ENV TERM=dumb
 
@@ -88,8 +97,8 @@ CMD sh -c '\
     cp build/ovms3.bin             /output/ovms3.bin             && \
     cp build/bootloader/bootloader.bin \
                                    /output/bootloader.bin        && \
-    cp build/partition_table/partition-table.bin \
-                                   /output/partition-table.bin   && \
+    cp build/partitions.bin        /output/partition-table.bin   && \
+    cp build/ota_data_initial.bin  /output/ota_data_initial.bin  && \
     echo "" && \
     echo "════════════════════════════════════════" && \
     echo "  Firmware ready in /output/" && \
@@ -103,6 +112,7 @@ CMD sh -c '\
     echo "      write_flash \\" && \
     echo "        0x1000  bootloader.bin \\" && \
     echo "        0x8000  partition-table.bin \\" && \
+    echo "        0xd000  ota_data_initial.bin \\" && \
     echo "        0x10000 ovms3.bin" && \
     echo "════════════════════════════════════════" \
 '
