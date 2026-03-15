@@ -40,6 +40,7 @@ RUN git submodule update --init --depth 1 \
         vehicle/OVMS.V3/components/esp32 \
         vehicle/OVMS.V3/components/can \
         vehicle/OVMS.V3/components/ovms_webserver \
+        vehicle/OVMS.V3/components/mongoose \
     || true   # non-fatal: not all repos require every submodule
 
 
