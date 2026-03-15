@@ -15,6 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
   ovms = new OVMSService(OVMS_CONFIG);
   window._ovms = ovms;
 
+  const shell = new OVMSShell(ovms);
+
   logger = new OVMSLogger();
   logger.init().catch(e => showDebug('Logger-feil: ' + e));
   logger.onTripStart   = () => updateRecordingBadge();

@@ -7,6 +7,9 @@ const OVMS_CONFIG = {
   vehicleId: 'EV88283',
   clientId:  'ovms-webapp-' + Math.random().toString(16).substr(2, 8),
 
+  // Direct local access (home network)
+  ovmsIp:    '192.168.55.247',
+
   // Vehicle info
   vin:       '3C3CFFGE4FT741123',
   carName:   'Fiat 500e',

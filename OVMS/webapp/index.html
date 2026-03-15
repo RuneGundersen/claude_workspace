@@ -41,6 +41,7 @@
   <button class="nav-tab" data-tab="history">📊 Historikk</button>
   <button class="nav-tab" data-tab="control">🎮 Kontroll</button>
   <button class="nav-tab" data-tab="diag">🔧 Diagnose</button>
+  <button class="nav-tab" data-tab="shell">💻 Shell</button>
 </nav>
 
 <!-- Battery Panel -->
@@ -613,6 +614,34 @@
 
 </div>
 
+<!-- Shell Panel -->
+<div id="panel-shell" class="tab-panel">
+  <div class="card" style="padding:0;overflow:hidden">
+    <div id="shellOutput" style="
+      font-family: monospace;
+      font-size: 13px;
+      background: #0a0a0a;
+      color: #d4d4d4;
+      height: 55vh;
+      overflow-y: auto;
+      padding: 12px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    "></div>
+    <div style="display:flex;gap:8px;padding:10px;background:#111;border-top:1px solid #222">
+      <input id="shellInput" type="text" placeholder="Skriv kommando…" autocomplete="off" autocorrect="off"
+        spellcheck="false" style="
+          flex:1;background:#1a1a1a;color:#fff;border:1px solid #333;
+          border-radius:6px;padding:8px 12px;font-family:monospace;font-size:13px;
+        ">
+      <button id="shellSend" style="
+        background:#4a90d9;color:#fff;border:none;border-radius:6px;
+        padding:8px 16px;font-size:13px;cursor:pointer;
+      ">Send</button>
+    </div>
+  </div>
+</div>
+
 <!-- History detail modal -->
 <div id="historyModal" class="modal-overlay">
   <div class="modal-box">
@@ -647,6 +676,7 @@
 <script src="diagnostics.js"></script>
 <script src="cells.js"></script>
 <script src="physics.js"></script>
+<script src="shell.js"></script>
 <script src="app.js"></script>
 <script>
   if ('serviceWorker' in navigator) {
