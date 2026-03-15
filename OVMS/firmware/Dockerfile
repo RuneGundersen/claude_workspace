@@ -36,12 +36,9 @@ RUN git clone --depth 1 \
 # Initialise only the submodules that the build actually needs.
 # Full recursive init pulls dozens of unused modules and takes 10+ minutes.
 WORKDIR /build/ovms3
-RUN git submodule update --init --depth 1 \
-        vehicle/OVMS.V3/components/esp32 \
-        vehicle/OVMS.V3/components/can \
-        vehicle/OVMS.V3/components/ovms_webserver \
-        vehicle/OVMS.V3/components/mongoose \
-    || true   # non-fatal: not all repos require every submodule
+# Init all first-level submodules (no --recursive, so sub-submodules are skipped).
+# Shallow depth keeps this fast (~1-2 min vs 10+ min for full recursive).
+RUN git submodule update --init --depth 1
 
 
 # ── Stage 3: apply custom plugin + build ─────────────────────────────────────
