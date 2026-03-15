@@ -52,14 +52,16 @@ COPY vehicle_fiat500e.cpp /build/ovms3/vehicle/OVMS.V3/components/vehicle_fiat50
 
 WORKDIR /build/ovms3/vehicle/OVMS.V3
 
-# Seed the sdkconfig from OVMS defaults for hardware rev 3.1 (standard module).
-RUN cp sdkconfig.default.hw31 sdkconfig 2>/dev/null \
-    || cp sdkconfig.default     sdkconfig 2>/dev/null \
-    || echo "No default sdkconfig — idf.py will generate one"
+# Generate sdkconfig from Kconfig defaults without opening the interactive
+# menu (which requires a real terminal and fails in Docker).
+# `make defconfig` writes sdkconfig silently; subsequent `make` sees it
+# already present and skips the menuconfig step entirely.
+# TERM=dumb suppresses any residual curses probes.
+ENV TERM=dumb
 
-# OVMS uses the legacy ESP-IDF make build system (not idf.py/CMake).
-# bash -c ensures pipefail applies; the dot-source activates the
-# xtensa cross-compiler that ships in the espressif/idf base image.
+RUN bash -c '. $IDF_PATH/export.sh && make defconfig' \
+    && echo "✓ sdkconfig generated"
+
 RUN bash -c '. $IDF_PATH/export.sh && make -j$(nproc)' \
     && echo "✓ Build succeeded"
 
