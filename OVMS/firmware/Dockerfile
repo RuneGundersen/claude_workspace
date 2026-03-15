@@ -67,7 +67,9 @@ ENV TERM=dumb
 # IDF 4.4.7 GCC promotes several warnings to errors that OVMS code doesn't
 # satisfy.  -Wno-error doesn't undo -Werror=X; we must disable the specific
 # warnings so there is nothing for -Werror=X to promote.
-RUN printf '\nCFLAGS   += -Wno-misleading-indentation -Wno-switch -Wno-maybe-uninitialized -Wno-format-truncation\nCXXFLAGS += -Wno-misleading-indentation -Wno-switch -Wno-maybe-uninitialized\n' \
+# Suppress GCC 8+ warnings that OVMS code (written for older toolchains) triggers.
+# Add to both C and C++ flags so all components are covered.
+RUN printf '\nWNO_EXTRA := -Wno-misleading-indentation -Wno-switch -Wno-maybe-uninitialized -Wno-format-truncation -Wno-int-in-bool-context -Wno-parentheses -Wno-restrict -Wno-address -Wno-nonnull-compare\nCFLAGS   += $(WNO_EXTRA)\nCXXFLAGS += $(WNO_EXTRA)\n' \
         >> /opt/esp/idf/make/component_wrapper.mk
 
 RUN bash -c '. $IDF_PATH/export.sh && make -j$(nproc)' \
