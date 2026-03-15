@@ -59,10 +59,14 @@ RUN cp support/sdkconfig.default.hw31 sdkconfig
 # TERM=dumb suppresses residual curses probes.
 ENV TERM=dumb
 
-# Suppress format-truncation warning only in the mongoose component,
-# so we don't override global CFLAGS (which would break include paths).
-RUN echo "CFLAGS += -Wno-format-truncation" \
-    >> /build/ovms3/vehicle/OVMS.V3/components/mongoose/component.mk
+# The IDF 4.4.7 GCC promotes several warnings to errors that OVMS's code
+# (written against an older toolchain) doesn't satisfy.  Append -Wno-error
+# to the IDF component wrapper so warnings don't fail the build, and add
+# -Wno-format-truncation specifically for the mongoose third-party library.
+RUN echo "CFLAGS   += -Wno-error" >> /opt/esp/idf/make/component_wrapper.mk \
+ && echo "CXXFLAGS += -Wno-error" >> /opt/esp/idf/make/component_wrapper.mk \
+ && echo "CFLAGS += -Wno-format-truncation" \
+        >> /build/ovms3/vehicle/OVMS.V3/components/mongoose/component.mk
 
 RUN bash -c '. $IDF_PATH/export.sh && make -j$(nproc)' \
     && ls -lh build/ovms3.bin \
