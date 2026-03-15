@@ -196,6 +196,9 @@ function updateBattery() {
   setText('batt12vVoltage', v12v, 'V');
   setText('batt12vCurrent', i12v, 'A');
   setText('batt12vState',   s12v, '');
+
+  // Cell heatmap
+  updateCellHeatmap(ovms);
 }
 
 function updateCharging() {

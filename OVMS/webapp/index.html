@@ -174,6 +174,35 @@
     </div>
   </div>
 
+  <!-- Cell Voltage Heatmap -->
+  <div class="card">
+    <div class="card-title">Cellespenninger (96 celler)</div>
+
+    <!-- No-data state -->
+    <div id="cellNoData" class="cell-nodata">
+      Ingen celledata tilgjengelig.<br>
+      <span style="font-size:12px">Krever tilpasset firmware med BPCM UDS-polling.<br>Se <code>OVMS/firmware/README_CELLS.md</code> for oppsett.</span>
+    </div>
+
+    <!-- Stats -->
+    <div id="cellStats" class="cell-stats" style="display:none"></div>
+
+    <!-- Heatmap grid (12 × 8 = 96 cells, built by cells.js) -->
+    <div id="cellGrid" class="cell-heatmap" style="display:none"></div>
+
+    <!-- Legend -->
+    <div class="cell-legend">
+      <span class="cell-legend-item"><i class="cell-v-ok"></i> &lt;10 mV</span>
+      <span class="cell-legend-item"><i class="cell-v-warn-lo"></i> 10–25 mV</span>
+      <span class="cell-legend-item"><i class="cell-v-warn"></i> 25–50 mV</span>
+      <span class="cell-legend-item"><i class="cell-v-low"></i> 50–100 mV</span>
+      <span class="cell-legend-item"><i class="cell-v-crit"></i> &gt;100 mV</span>
+      <span class="cell-legend-item"><i class="cell-v-none"></i> Ingen data</span>
+    </div>
+
+    <div id="cellTimestamp" class="cell-timestamp"></div>
+  </div>
+
 </div>
 
 <!-- Charging Panel -->
@@ -533,6 +562,7 @@
 <script src="notifications.js"></script>
 <script src="charts.js"></script>
 <script src="diagnostics.js"></script>
+<script src="cells.js"></script>
 <script src="app.js"></script>
 <script>
   if ('serviceWorker' in navigator) {
