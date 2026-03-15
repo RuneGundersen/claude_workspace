@@ -37,9 +37,10 @@ RUN git clone --depth 1 \
 # Initialise only the submodules that the build actually needs.
 # Full recursive init pulls dozens of unused modules and takes 10+ minutes.
 WORKDIR /build/ovms3
-# Init all first-level submodules (no --recursive, so sub-submodules are skipped).
-# Shallow depth keeps this fast (~1-2 min vs 10+ min for full recursive).
-RUN git submodule update --init --depth 1
+# Full recursive init so nested library sub-submodules (e.g. mongoose/mongoose)
+# are present. --depth 1 at each level keeps it reasonably fast.
+RUN git submodule update --init --recursive --depth 1 \
+    || git submodule update --init --recursive   # retry without depth on failure
 
 
 # ── Stage 3: apply custom plugin + build ─────────────────────────────────────
