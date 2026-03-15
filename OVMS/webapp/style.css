@@ -792,3 +792,98 @@ header {
   color: #555;
   margin-top: 6px;
 }
+
+/* ===== Drag force card ===== */
+.drag-summary {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.drag-summary-item {
+  flex: 1;
+  background: var(--surface2);
+  border-radius: 8px;
+  padding: 7px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.drag-summary-lbl {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  white-space: nowrap;
+}
+.drag-summary-val {
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.drag-summary-power { color: var(--blue); }
+
+.drag-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.drag-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  gap: 3px 8px;
+  align-items: center;
+}
+.drag-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  grid-column: 1;
+}
+.drag-name {
+  font-size: 12px;
+  color: var(--text);
+}
+.drag-frac {
+  font-size: 11px;
+  color: var(--muted);
+}
+.drag-bar-bg {
+  grid-column: 1;
+  height: 8px;
+  background: #2a2a3a;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.drag-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width .4s ease;
+}
+.drag-bar-aero  { background: var(--blue); }
+.drag-bar-roll  { background: var(--green); }
+.drag-bar-total { background: var(--orange); }
+
+.drag-val {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+  align-self: center;
+}
+
+.drag-row--total .drag-name { font-weight: 700; }
+.drag-row--total .drag-val  { color: var(--orange); }
+
+.drag-note {
+  font-size: 11px;
+  color: #555;
+  line-height: 1.5;
+  border-top: 1px solid #2a2a3a;
+  padding-top: 8px;
+}

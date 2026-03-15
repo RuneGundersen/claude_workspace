@@ -240,6 +240,8 @@ function updateVehicle() {
   setText('vAmbient',  ambientTemp, '°C');
   setText('v12v',      v12,      'V');
 
+  updateDragCard(ovms);
+
   const lockIcon = document.getElementById('vLocked');
   if (locked !== null) {
     lockIcon.textContent = locked ? '🔒 Låst' : '🔓 Ulåst';

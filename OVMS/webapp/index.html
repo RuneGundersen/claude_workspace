@@ -280,6 +280,71 @@
     <div class="card-title">Kjøretøyinfo</div>
     <div class="info-row"><span>VIN</span><span id="vin" class="mono">--</span></div>
   </div>
+
+  <!-- Drag forces — shown only while driving -->
+  <div id="dragCard" class="card" style="display:none">
+    <div class="card-title">Kjøremotstand</div>
+
+    <!-- Summary row -->
+    <div class="drag-summary">
+      <div class="drag-summary-item">
+        <span class="drag-summary-lbl">Hastighet</span>
+        <span id="dragSpeed" class="drag-summary-val">--</span>
+      </div>
+      <div class="drag-summary-item">
+        <span class="drag-summary-lbl">Effekt (motstand)</span>
+        <span id="dragPower" class="drag-summary-val drag-summary-power">--</span>
+      </div>
+      <div class="drag-summary-item">
+        <span class="drag-summary-lbl">Lufttetthet</span>
+        <span id="dragRho" class="drag-summary-val">--</span>
+      </div>
+    </div>
+
+    <!-- Force bars -->
+    <div class="drag-bars">
+
+      <div id="dragAero" class="drag-row">
+        <div class="drag-label">
+          <span class="drag-name">Luftmotstand</span>
+          <span id="dragAeroFrac" class="drag-frac">--%</span>
+        </div>
+        <div class="drag-bar-bg">
+          <div class="drag-bar-fill drag-bar-aero" style="width:0%"></div>
+        </div>
+        <span class="drag-val">-- N</span>
+      </div>
+
+      <div id="dragRoll" class="drag-row">
+        <div class="drag-label">
+          <span class="drag-name">Rullemotstand</span>
+          <span id="dragRollFrac" class="drag-frac">--%</span>
+        </div>
+        <div class="drag-bar-bg">
+          <div class="drag-bar-fill drag-bar-roll" style="width:0%"></div>
+        </div>
+        <span class="drag-val">-- N</span>
+      </div>
+
+      <div id="dragTotal" class="drag-row drag-row--total">
+        <div class="drag-label">
+          <span class="drag-name">Total motstand</span>
+          <span class="drag-frac">100%</span>
+        </div>
+        <div class="drag-bar-bg">
+          <div class="drag-bar-fill drag-bar-total" style="width:0%"></div>
+        </div>
+        <span class="drag-val">-- N</span>
+      </div>
+
+    </div>
+
+    <!-- Constants footnote -->
+    <div class="drag-note">
+      Modell: Cd 0.311 · A 2.13 m² · Cr 0.011 · m 1450 kg · plant vei · ingen vind
+    </div>
+  </div>
+
 </div>
 
 <!-- Map Panel -->
@@ -563,6 +628,7 @@
 <script src="charts.js"></script>
 <script src="diagnostics.js"></script>
 <script src="cells.js"></script>
+<script src="physics.js"></script>
 <script src="app.js"></script>
 <script>
   if ('serviceWorker' in navigator) {
