@@ -63,10 +63,11 @@ ENV TERM=dumb
 # (written against an older toolchain) doesn't satisfy.  Append -Wno-error
 # to the IDF component wrapper so warnings don't fail the build, and add
 # -Wno-format-truncation specifically for the mongoose third-party library.
-RUN echo "CFLAGS   += -Wno-error" >> /opt/esp/idf/make/component_wrapper.mk \
- && echo "CXXFLAGS += -Wno-error" >> /opt/esp/idf/make/component_wrapper.mk \
- && echo "CFLAGS += -Wno-format-truncation" \
-        >> /build/ovms3/vehicle/OVMS.V3/components/mongoose/component.mk
+# IDF 4.4.7 GCC promotes several warnings to errors that OVMS code doesn't
+# satisfy.  -Wno-error doesn't undo -Werror=X; we must disable the specific
+# warnings so there is nothing for -Werror=X to promote.
+RUN printf '\nCFLAGS   += -Wno-misleading-indentation -Wno-switch -Wno-maybe-uninitialized -Wno-format-truncation\nCXXFLAGS += -Wno-misleading-indentation -Wno-switch -Wno-maybe-uninitialized\n' \
+        >> /opt/esp/idf/make/component_wrapper.mk
 
 RUN bash -c '. $IDF_PATH/export.sh && make -j$(nproc)' \
     && ls -lh build/ovms3.bin \
