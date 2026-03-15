@@ -795,7 +795,8 @@ header {
 
 /* ===== Drag force card ===== */
 .drag-summary {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 6px;
   margin-bottom: 14px;
 }
@@ -862,9 +863,11 @@ header {
   border-radius: 4px;
   transition: width .4s ease;
 }
-.drag-bar-aero  { background: var(--blue); }
-.drag-bar-roll  { background: var(--green); }
-.drag-bar-total { background: var(--orange); }
+.drag-bar-aero      { background: var(--blue); }
+.drag-bar-roll      { background: var(--green); }
+.drag-bar-total     { background: var(--orange); }
+.drag-bar-grade-up  { background: var(--red); }
+.drag-bar-grade-dn  { background: var(--green); }
 
 .drag-val {
   grid-column: 2;
@@ -878,7 +881,9 @@ header {
 }
 
 .drag-row--total .drag-name { font-weight: 700; }
-.drag-row--total .drag-val  { color: var(--orange); }
+.drag-total-color           { color: var(--orange); }
+.drag-grade-up              { color: var(--red); }
+.drag-grade-dn              { color: var(--green); }
 
 .drag-note {
   font-size: 11px;
