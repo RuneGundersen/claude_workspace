@@ -60,7 +60,12 @@ ENV TERM=dumb
 RUN bash -c '. $IDF_PATH/export.sh && make defconfig' \
     && echo "✓ sdkconfig generated"
 
-RUN bash -c '. $IDF_PATH/export.sh && make -j$(nproc) CFLAGS=-Wno-format-truncation' \
+# Suppress format-truncation warning only in the mongoose component,
+# so we don't override global CFLAGS (which would break include paths).
+RUN echo "CFLAGS += -Wno-format-truncation" \
+    >> /build/ovms3/vehicle/OVMS.V3/components/mongoose/component.mk
+
+RUN bash -c '. $IDF_PATH/export.sh && make -j$(nproc)' \
     && echo "✓ Build succeeded"
 
 
