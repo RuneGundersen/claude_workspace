@@ -50,9 +50,13 @@ COPY vehicle_fiat500e.cpp /build/ovms3/vehicle/OVMS.V3/components/vehicle_fiat50
 
 WORKDIR /build/ovms3/vehicle/OVMS.V3
 
-# OVMS commits its own sdkconfig — do NOT run `make defconfig` which would
-# overwrite it with bare IDF defaults and strip PPP / other required options.
-# TERM=dumb suppresses any residual curses probes in case make checks it.
+# OVMS does NOT commit sdkconfig; instead it ships hardware-specific defaults
+# in support/.  Copy hw31 (OVMS v3.1, the standard CAN hardware) before make
+# so the IDF build system finds a valid config and skips the interactive
+# menuconfig step (which crashes in Docker without a real terminal).
+RUN cp support/sdkconfig.default.hw31 sdkconfig
+
+# TERM=dumb suppresses residual curses probes.
 ENV TERM=dumb
 
 # Suppress format-truncation warning only in the mongoose component,
@@ -61,6 +65,7 @@ RUN echo "CFLAGS += -Wno-format-truncation" \
     >> /build/ovms3/vehicle/OVMS.V3/components/mongoose/component.mk
 
 RUN bash -c '. $IDF_PATH/export.sh && make -j$(nproc)' \
+    && ls -lh build/ovms3.bin \
     && echo "✓ Build succeeded"
 
 
