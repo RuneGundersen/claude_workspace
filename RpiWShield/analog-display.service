@@ -1,0 +1,25 @@
+[Unit]
+Description=Analog Signal Sampler + FFT Display (DFR0327 / ADS1115)
+Documentation=https://github.com/RuneGundersen/claude_workspace
+# Wait for I2C bus and the graphical desktop to be ready
+After=graphical.target
+Wants=graphical.target
+
+[Service]
+Type=simple
+User=pi
+# DISPLAY and XAUTHORITY let matplotlib open a window on the desktop
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/pi/.Xauthority
+# Adjust the path below if you cloned the repo elsewhere
+WorkingDirectory=/home/pi/claude_workspace/RpiWShield
+ExecStart=/usr/bin/python3 /home/pi/claude_workspace/RpiWShield/analog_display.py \
+    --channel 0 \
+    --rate 500 \
+    --buffer 1024
+# Restart automatically if the script crashes (e.g. I2C glitch)
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical.target

@@ -1,0 +1,11 @@
+# ── DFRobot Arduino Expansion Shield v2.0 (DFR0327) ──────────────────────────
+# Enable I2C bus 1 (SDA=GPIO2/pin3, SCL=GPIO3/pin5)
+dtparam=i2c_arm=on
+
+# Bump I2C clock to 400 kHz (Fast-mode) for quicker ADS1115 reads.
+# Drop back to 100000 if you see communication errors.
+dtparam=i2c_arm_baudrate=400000
+
+# Enable I2C hardware at boot (kernel module)
+# (Equivalent to: sudo modprobe i2c-dev)
+dtoverlay=i2c-gpio,bus=1
