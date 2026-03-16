@@ -892,3 +892,115 @@ header {
   border-top: 1px solid #2a2a3a;
   padding-top: 8px;
 }
+
+/* ===== Driving Overview Card ===== */
+.drive-card { padding: 14px 16px; }
+
+.drive-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.drive-item {
+  background: var(--surface2);
+  border-radius: 12px;
+  padding: 14px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.drive-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.drive-val {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.drive-val small {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.drive-sublabel {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+/* ===== TPMS ===== */
+.tpms-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+
+.tpms-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+}
+
+.tpms-tire {
+  flex: 1;
+  background: var(--surface2);
+  border: 2px solid #2a2a4a;
+  border-radius: 10px;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transition: border-color .3s;
+}
+
+.tpms-tire.tpms-ok   { border-color: var(--green); }
+.tpms-tire.tpms-low  { border-color: var(--yellow); }
+.tpms-tire.tpms-crit { border-color: var(--red); animation: pulse 1s infinite; }
+
+.tpms-pos  { font-size: 10px; color: var(--muted); font-weight: 600; letter-spacing: .04em; }
+.tpms-val  { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.tpms-unit { font-size: 10px; color: var(--muted); }
+
+.tpms-tire.tpms-ok   .tpms-val { color: var(--green); }
+.tpms-tire.tpms-low  .tpms-val { color: var(--yellow); }
+.tpms-tire.tpms-crit .tpms-val { color: var(--red); }
+
+.tpms-axle-lbl {
+  width: 40px;
+  text-align: center;
+  font-size: 10px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.tpms-car-body {
+  font-size: 36px;
+  text-align: center;
+  padding: 2px 0;
+  opacity: .6;
+}
+
+.tpms-alert {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.tpms-alert--low  { background: rgba(241,196,15,.15); color: var(--yellow); border: 1px solid var(--yellow); }
+.tpms-alert--crit { background: rgba(231,76,60,.2);   color: var(--red);    border: 1px solid var(--red); }

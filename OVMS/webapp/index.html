@@ -244,6 +244,65 @@
 
 <!-- Vehicle Panel -->
 <div id="panel-vehicle" class="tab-panel">
+
+  <!-- Driving Overview -->
+  <div class="card drive-card">
+    <div class="drive-grid">
+      <div class="drive-item">
+        <span class="drive-label">Batterinivå</span>
+        <span id="dvSOC" class="drive-val">--%</span>
+      </div>
+      <div class="drive-item">
+        <span class="drive-label">Est. rekkevidde</span>
+        <span id="dvRange" class="drive-val">-- <small>km</small></span>
+      </div>
+      <div class="drive-item">
+        <span class="drive-label">Hastighet</span>
+        <span id="dvSpeed" class="drive-val">-- <small>km/h</small></span>
+      </div>
+      <div class="drive-item">
+        <span class="drive-label">Forbruk</span>
+        <span id="dvConsumption" class="drive-val">--</span>
+        <span class="drive-sublabel">kWh/100km</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TPMS -->
+  <div class="card">
+    <div class="card-title">Dekktrykk</div>
+    <div class="tpms-layout">
+      <div class="tpms-row">
+        <div class="tpms-tire" id="tpmsFL">
+          <span class="tpms-pos">F.V.</span>
+          <span class="tpms-val" id="tpmsFLval">--</span>
+          <span class="tpms-unit">kPa</span>
+        </div>
+        <div class="tpms-axle-lbl">Foran</div>
+        <div class="tpms-tire" id="tpmsFR">
+          <span class="tpms-pos">F.H.</span>
+          <span class="tpms-val" id="tpmsFRval">--</span>
+          <span class="tpms-unit">kPa</span>
+        </div>
+      </div>
+      <div class="tpms-car-body">🚗</div>
+      <div class="tpms-row">
+        <div class="tpms-tire" id="tpmsRL">
+          <span class="tpms-pos">B.V.</span>
+          <span class="tpms-val" id="tpmsRLval">--</span>
+          <span class="tpms-unit">kPa</span>
+        </div>
+        <div class="tpms-axle-lbl">Bak</div>
+        <div class="tpms-tire" id="tpmsRR">
+          <span class="tpms-pos">B.H.</span>
+          <span class="tpms-val" id="tpmsRRval">--</span>
+          <span class="tpms-unit">kPa</span>
+        </div>
+      </div>
+    </div>
+    <div id="tpmsAlert" class="tpms-alert" style="display:none"></div>
+  </div>
+
   <div class="card">
     <div class="card-title">Status</div>
     <div class="badge-row">

@@ -122,6 +122,7 @@ function refreshUI() {
   updateBattery();
   updateCharging();
   updateVehicle();
+  updateTpms();
   updateEnvironment();
   updateLocation();
 }
@@ -225,6 +226,54 @@ function updateCharging() {
   setText('chgEfficiency', efficiency,  '%');
 }
 
+function updateTpms() {
+  const keys = {
+    FL: 'v.tp.fl.p', FR: 'v.tp.fr.p',
+    RL: 'v.tp.rl.p', RR: 'v.tp.rr.p',
+  };
+  const LOW = 207, CRIT = 172;  // kPa thresholds
+  let anyLow = false, anyCrit = false;
+
+  Object.entries(keys).forEach(([pos, key]) => {
+    const kPa  = ovms.getFloat(key, 0);
+    const tile  = document.getElementById('tpms' + pos);
+    const valEl = document.getElementById('tpms' + pos + 'val');
+    if (!tile || !valEl) return;
+
+    if (kPa === null) {
+      valEl.textContent = '--';
+      tile.className = 'tpms-tire';
+      return;
+    }
+
+    valEl.textContent = kPa;
+    if (kPa < CRIT) {
+      tile.className = 'tpms-tire tpms-crit';
+      anyCrit = true;
+    } else if (kPa < LOW) {
+      tile.className = 'tpms-tire tpms-low';
+      anyLow = true;
+    } else {
+      tile.className = 'tpms-tire tpms-ok';
+    }
+  });
+
+  const alert = document.getElementById('tpmsAlert');
+  if (alert) {
+    if (anyCrit) {
+      alert.style.display = '';
+      alert.className = 'tpms-alert tpms-alert--crit';
+      alert.textContent = '🚨 Kritisk lavt dekktrykk — stopp bilen';
+    } else if (anyLow) {
+      alert.style.display = '';
+      alert.className = 'tpms-alert tpms-alert--low';
+      alert.textContent = '⚠️ Lavt dekktrykk — sjekk dekkene';
+    } else {
+      alert.style.display = 'none';
+    }
+  }
+}
+
 function updateVehicle() {
   const speed    = ovms.getFloat('v.p.speed', 0);
   const odometer = ovms.getFloat('v.p.odometer', 0);
@@ -241,6 +290,36 @@ function updateVehicle() {
   setText('vCabin',    cabinTemp,'°C');
   setText('vAmbient',  ambientTemp, '°C');
   setText('v12v',      v12,      'V');
+
+  // Driving overview card
+  const soc      = ovms.getFloat('v.b.soc', 1);
+  const rangeEst = ovms.getFloat('v.b.range.est', 0) ?? ovms.getFloat('v.b.range', 0);
+  const power    = ovms.getFloat('v.b.power', 1);
+
+  const dvSOC  = document.getElementById('dvSOC');
+  const dvRng  = document.getElementById('dvRange');
+  const dvSpd  = document.getElementById('dvSpeed');
+  const dvCons = document.getElementById('dvConsumption');
+
+  if (dvSOC)  dvSOC.innerHTML  = soc      !== null ? `${soc}<small>%</small>`       : '--%';
+  if (dvRng)  dvRng.innerHTML  = rangeEst !== null ? `${rangeEst} <small>km</small>` : '-- <small>km</small>';
+  if (dvSpd)  dvSpd.innerHTML  = speed    !== null ? `${speed} <small>km/h</small>`  : '-- <small>km/h</small>';
+
+  if (dvCons) {
+    let cons = null;
+    if (power !== null && speed !== null && speed > 3)
+      cons = parseFloat((power / speed * 100).toFixed(1));
+    if (cons !== null) {
+      dvCons.textContent = cons < 0 ? cons : '+' + cons;
+      dvCons.style.color = cons < 0 ? 'var(--green)'
+                         : cons < 15 ? 'var(--text)'
+                         : cons < 22 ? 'var(--yellow)'
+                         : 'var(--orange)';
+    } else {
+      dvCons.textContent = '--';
+      dvCons.style.color = '';
+    }
+  }
 
   updateDragCard(ovms);
 
