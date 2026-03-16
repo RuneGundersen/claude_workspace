@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Flexit UNI4</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="header-left">
+    <span class="unit-icon">🌬️</span>
+    <div>
+      <div class="unit-name">Flexit UNI4</div>
+      <div class="unit-sub">Ventilasjonsanlegg</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="status-pill">
+      <span class="status-dot offline" id="statusDot"></span>
+      <span id="statusLabel">Frakoblet</span>
+    </div>
+  </div>
+</header>
+
+<!-- Nav -->
+<nav class="nav-bar">
+  <button class="nav-tab active" data-panel="panelOverview">Oversikt</button>
+  <button class="nav-tab"        data-panel="panelControl">Styring</button>
+  <button class="nav-tab"        data-panel="panelInfo">Info</button>
+</nav>
+
+<!-- ── Overview panel ───────────────────────────────────────────────────── -->
+<div id="panelOverview" class="tab-panel active">
+
+  <!-- Alarm card (hidden when no alarms) -->
+  <div id="alarmCard" class="card alarm-card" style="display:none">
+    <div class="card-title">⚠️ Alarmer</div>
+    <div id="alarmList"></div>
+  </div>
+
+  <!-- Temperatures -->
+  <div class="card">
+    <div class="card-title">Temperaturer</div>
+    <div class="temp-grid">
+      <div class="temp-item">
+        <div class="temp-label">Tilluft</div>
+        <div class="temp-val" id="supplyTemp">—</div>
+        <div class="temp-sub">Etter varmegjenvinner</div>
+      </div>
+      <div class="temp-item">
+        <div class="temp-label">Avtrekk</div>
+        <div class="temp-val" id="extractTemp">—</div>
+        <div class="temp-sub">Fra bolig</div>
+      </div>
+      <div class="temp-item">
+        <div class="temp-label">Ute</div>
+        <div class="temp-val" id="outdoorTemp">—</div>
+        <div class="temp-sub">Uteluft</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Heat recovery -->
+  <div class="card">
+    <div class="card-title">Varmegjenvinner</div>
+    <div class="bar-row">
+      <div class="bar-label">Effektivitet</div>
+      <div class="bar-val" id="heatRecovery">—</div>
+    </div>
+    <div class="bar-bg"><div class="bar-fill bar-green" id="hrBar" style="width:0%"></div></div>
+    <div class="bar-row" style="margin-top:10px">
+      <div class="bar-label">Varme aktiv</div>
+      <div class="bar-val" id="heatingPct">—</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">Kjøling aktiv</div>
+      <div class="bar-val" id="coolingPct">—</div>
+    </div>
+  </div>
+
+  <!-- Fan speed mode -->
+  <div class="card">
+    <div class="card-title">Viftehastighet</div>
+    <div class="speed-display" id="speedMode">—</div>
+  </div>
+
+  <!-- Filter -->
+  <div class="card">
+    <div class="card-title">Filter</div>
+    <div class="bar-row">
+      <div class="bar-label">Timer siden filterbytte</div>
+      <div class="bar-val" id="filterHours">—</div>
+    </div>
+    <div class="bar-bg">
+      <div class="bar-fill bar-green" id="filterHoursBar" style="width:0%"></div>
+    </div>
+    <div class="bar-hint">Anbefalt bytte: ~2000 t</div>
+  </div>
+
+  <div class="last-update" id="lastUpdate"></div>
+</div>
+
+<!-- ── Control panel ─────────────────────────────────────────────────────── -->
+<div id="panelControl" class="tab-panel">
+
+  <!-- Speed control -->
+  <div class="card">
+    <div class="card-title">Viftehastighet</div>
+    <div class="speed-btn-grid">
+      <button class="speed-btn" data-mode="0">⏹<br><span>Stop</span></button>
+      <button class="speed-btn" data-mode="1">🌬️<br><span>Min</span></button>
+      <button class="speed-btn" data-mode="2">💨<br><span>Normal</span></button>
+      <button class="speed-btn" data-mode="3">🌀<br><span>Maks</span></button>
+    </div>
+  </div>
+
+  <!-- Temperature setpoint -->
+  <div class="card">
+    <div class="card-title">Temperatur-settpunkt</div>
+    <div class="setpoint-display" id="setpointDisplay">—</div>
+    <input id="tempSlider" type="range" min="14" max="26" step="0.5" value="20" class="temp-slider">
+    <div class="slider-labels">
+      <span>14 °C</span>
+      <span>20 °C</span>
+      <span>26 °C</span>
+    </div>
+    <button class="apply-btn" onclick="setTemperature(parseFloat($('tempSlider').value))">
+      Sett temperatur
+    </button>
+  </div>
+
+  <!-- Settings -->
+  <div class="card">
+    <div class="card-title">Innstillinger</div>
+    <button id="btnChangePassword" class="outline-btn">🔑 Endre passord</button>
+  </div>
+
+</div>
+
+<!-- ── Info panel ────────────────────────────────────────────────────────── -->
+<div id="panelInfo" class="tab-panel">
+
+  <div class="card">
+    <div class="card-title">Vifteoppsett</div>
+    <table class="info-table">
+      <thead>
+        <tr><th></th><th>Tilluft</th><th>Avtrekk</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Hastighet 1 (min)</td>   <td id="s1Supply">—</td><td id="s1Extract">—</td></tr>
+        <tr><td>Hastighet 2 (normal)</td><td id="s2Supply">—</td><td id="s2Extract">—</td></tr>
+        <tr><td>Hastighet 3 (maks)</td>  <td id="s3Supply">—</td><td id="s3Extract">—</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Tilkobling</div>
+    <div class="info-row"><span>Broker</span><span class="mono">HiveMQ Cloud</span></div>
+    <div class="info-row"><span>Topic</span><span class="mono">flexit/UNI4</span></div>
+  </div>
+
+</div>
+
+<!-- Setup modal -->
+<div id="setupModal" class="modal-overlay" style="display:none">
+  <div class="modal-box setup-box">
+    <div class="modal-header">
+      <span class="modal-title">🔐 Koble til Flexit</span>
+    </div>
+    <div class="modal-content">
+      <p class="setup-desc">Skriv inn MQTT-passordet for å koble til ventilasjonsanlegget. Det lagres kun i nettleseren din.</p>
+      <div class="setup-field">
+        <label class="setup-label">Passord</label>
+        <input id="setupPassword" type="password" class="setup-input" placeholder="MQTT-passord" autocomplete="current-password">
+      </div>
+      <div id="setupError" class="setup-error" style="display:none"></div>
+      <button id="setupSave" class="setup-btn">Koble til</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/paho-mqtt.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+
+<script>
+  // Tab navigation
+  document.querySelectorAll('.nav-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.panel).classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>
