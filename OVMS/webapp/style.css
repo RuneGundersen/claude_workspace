@@ -1004,3 +1004,81 @@ header {
 
 .tpms-alert--low  { background: rgba(241,196,15,.15); color: var(--yellow); border: 1px solid var(--yellow); }
 .tpms-alert--crit { background: rgba(231,76,60,.2);   color: var(--red);    border: 1px solid var(--red); }
+
+/* ===== Setup Modal ===== */
+.setup-box {
+  border-radius: 20px;
+  max-width: 400px;
+  margin: auto;
+  align-self: center;
+}
+
+.setup-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+.setup-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.setup-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.setup-input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid #2a2a4a;
+  color: var(--text);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color .2s;
+}
+.setup-input:focus { border-color: var(--blue); }
+
+.setup-error {
+  font-size: 12px;
+  color: var(--red);
+  margin-bottom: 8px;
+  min-height: 16px;
+}
+
+.setup-btn {
+  width: 100%;
+  background: var(--blue);
+  border: none;
+  color: #fff;
+  padding: 13px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 8px;
+  transition: opacity .2s;
+}
+.setup-btn:active { opacity: .8; }
+
+.setup-btn--outline {
+  background: transparent;
+  border: 1px solid var(--blue);
+  color: var(--blue);
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  width: auto;
+}
+.setup-btn--outline:active { opacity: .7; }

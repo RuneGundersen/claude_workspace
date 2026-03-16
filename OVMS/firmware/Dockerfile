@@ -58,14 +58,54 @@ WORKDIR /build/ovms3/vehicle/OVMS.V3
 # menuconfig step (which crashes in Docker without a real terminal).
 RUN cp support/sdkconfig.default.hw31 sdkconfig
 
-# console_telnet.h uses MongooseClient as a base class but doesn't include
-# mongoose_client.h (omitted when the class was added in 2026).  Patch it now.
+# ── Patch 1: console_telnet.h — add missing mongoose_client.h include ────────
 RUN sed -i 's|#include "ovms_console.h"|#include "mongoose_client.h"\n#include "ovms_console.h"|' \
         components/console_telnet/src/console_telnet.h && \
-    sed -i 's|auto mglock = console->MongooseLock();|auto mglock = MongooseLock();|' \
+    grep -q "mongoose_client.h" components/console_telnet/src/console_telnet.h && \
+    echo "Patch 1a OK" || { echo "Patch 1a FAILED"; exit 1; }
+
+RUN sed -i 's|auto mglock = console->MongooseLock();|auto mglock = MongooseLock();|' \
         components/console_telnet/src/console_telnet.cpp && \
-    printf '\n// Stub definitions for builds where CONFIG_HEAP_TASK_TRACKING is unset.\n#ifdef NOGO\nbool module_check_heap_integrity(char* buf, size_t size) { if (buf && size > 0) buf[0] = 0; return true; }\nbool module_check_heap_integrity(int verbosity, OvmsWriter* writer) { return true; }\nbool module_check_heap_alert(int verbosity, OvmsWriter* writer) { return true; }\n#endif\n' \
-        >> main/ovms_module.cpp
+    echo "Patch 1b OK"
+
+# ── Patch 2: ovms_module.cpp — stub heap-tracking symbols ───────────────────
+RUN printf '\n// Stub definitions for builds where CONFIG_HEAP_TASK_TRACKING is unset.\n#ifdef NOGO\nbool module_check_heap_integrity(char* buf, size_t size) { if (buf && size > 0) buf[0] = 0; return true; }\nbool module_check_heap_integrity(int verbosity, OvmsWriter* writer) { return true; }\nbool module_check_heap_alert(int verbosity, OvmsWriter* writer) { return true; }\n#endif\n' \
+        >> main/ovms_module.cpp && echo "Patch 2 OK"
+
+# ── Patch 3: OvmsConsole::Event — pad to match IDF 4.4 uart_event_t size ────
+# IDF 4.4 added bool timeout_flag to uart_event_t, growing it from 8 → 12 bytes.
+# OvmsConsole shares its queue with the UART driver, so Event must be ≥ 12 bytes,
+# otherwise xQueueReceive writes 12 bytes into an 8-byte stack variable, the 4-byte
+# overflow corrupts the adjacent `queue` local → NULL-deref StoreProhibited crash.
+# Use Python for reliable multi-line substitution (sed \n handling is fragile).
+RUN python3 - <<'PYEOF'
+import sys
+path = 'main/ovms_console.h'
+src = open(path).read()
+old = '      } Event;'
+new = '      uint32_t _idf44_pad; // pad Event to >= sizeof(uart_event_t) in IDF 4.4\n      } Event;'
+assert old in src, f"Pattern '{old}' not found in {path} — check indentation"
+patched = src.replace(old, new, 1)
+assert '_idf44_pad' in patched
+open(path, 'w').write(patched)
+print('Patch 3 OK — Event struct padded to 12 bytes')
+PYEOF
+
+# ── Patch 4: OvmsConsole::Poll — in-loop NULL guard for queue ────────────────
+# Refresh `queue` from m_queue on every iteration so a stale cached register
+# that became NULL can't reach xQueueReceive.
+RUN python3 - <<'PYEOF'
+import sys
+path = 'main/ovms_console.cpp'
+src = open(path).read()
+old = '    if (xQueueReceive(queue, (void*)&event, ticks))'
+new = '    if (m_queue) queue = m_queue; if (!queue) return; if (xQueueReceive(queue, (void*)&event, ticks))'
+assert old in src, f"Pattern not found in {path}"
+patched = src.replace(old, new, 1)
+assert 'if (m_queue) queue = m_queue' in patched
+open(path, 'w').write(patched)
+print('Patch 4 OK — in-loop NULL guard added')
+PYEOF
 
 # TERM=dumb suppresses residual curses probes.
 ENV TERM=dumb

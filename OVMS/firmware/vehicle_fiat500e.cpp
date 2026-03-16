@@ -1,13 +1,18 @@
 /*
 ;    Project:       Open Vehicle Monitor System
 ;    Date:          5th July 2018
-;    Modified:      2026 — UDS cell-voltage polling (Rune Gundersen)
+;    Modified:      2026 — UDS polling expanded (VCM + BMS + charger)
 ;
 ;    Changes:
 ;    1.0  Initial release
 ;    1.1  Add BPCM UDS polling via OVMS poll infrastructure.
 ;         Per-cell voltages published as v.b.c.voltage[0..95] → MQTT.
 ;         Shell commands: xse cells / xse scan <start> <end>
+;    1.2  Add VCM driving data, BMS battery data, charger data polling.
+;         New metrics: motor RPM/torque, speed, SOC, temps, currents.
+;    1.3  Add TPMS (4 tire pressures via CAN-B UDS), key/ignition state,
+;         and brake pedal.
+;         New metrics: v.tp.fl/fr/rl/rr.p (kPa), v.e.on, v.e.footbrake.
 ;
 ;    (C) 2021       Guenther Huck
 ;    (C) 2011       Michael Stegen / Stegen Electronics
@@ -29,22 +34,25 @@
 ; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 
 ; CAN bus layout:
-;   CAN1  C-CAN  500 kbps  — powertrain / BMS (BPCM at UDS addr 0x42)
+;   CAN1  C-CAN  500 kbps  — powertrain / BMS (29-bit UDS)
 ;   CAN2  B-CAN   50 kbps  — body / comfort
 ;
-; BPCM UDS addressing (ISO 15765-2, 29-bit IDs):
-;   TX (tester→BPCM): 0x18DA42F1
-;   RX (BPCM→tester): 0x18DAF142
+; UDS ECU addresses (ISO 15765-2, 29-bit extended IDs):
+;   VCM  0x42  TX 0x18DA42F1  RX 0x18DAF142  (motor / inverter / speed)
+;   BMS  0x44  TX 0x18DA44F1  RX 0x18DAF144  (battery state)
+;   OBC  0x47  TX 0x18DA47F1  RX 0x18DAF147  (on-board charger)
 ;
 ; Cell voltage DID:
 ;   Set via config:  config set xse bpcm.cell_did <hex-DID>
 ;   Default 0x0000 → disabled until discovered via "xse scan" command.
-;   See README_CELLS.md for discovery procedure.
 ;
-; MQTT metrics added:
-;   v.b.c.voltage[0..95]   — cell voltages (V) — standard OVMS metric
+; MQTT metrics added (UDS-sourced):
+;   v.b.c.voltage[0..95]   — cell voltages (V)
 ;   xse.b.cell_did         — active cell DID (informational)
-;   xse.b.cell_count       — number of cells decoded in last reply
+;   xse.b.cell_count       — cells decoded in last reply
+;   xse.v.m.torque         — motor torque (Nm)
+;   xse.v.m.torque.tgt     — motor torque target (Nm)
+;   xse.v.m.coolant.temp   — motor coolant temperature (°C)
 */
 
 #include "ovms_log.h"
@@ -59,29 +67,15 @@ static const char *TAG = "v-fiat500e";
 #include "ovms_command.h"
 
 
-// ── UDS poll table ──────────────────────────────────────────────────────────
+// ── Dynamic UDS poll table ───────────────────────────────────────────────────
+// Built at startup by BuildPollTable().
 // polltime[] = {state0, state1, state2, state3}  (seconds; 0 = skip)
 //   state 0 = standby/off
 //   state 1 = on / driving
 //   state 2 = charging
-//   state 3 = (not used — reserved for DID scan)
-//
-// DID 0x2001: BPCM pack status (confirmed to work — used in existing code).
-// DID 0x0000 placeholder for the cell voltage DID; replaced at runtime when
-//   config xse/bpcm.cell_did is non-zero.
-//
-// NOTE: The cell-voltage DID entry uses txmoduleid=0 to mark it as disabled
-//       in the static table; it is added dynamically in the constructor when
-//       the config value is known.
+//   state 3 = (reserved)
 
-static const OvmsPoller::poll_pid_t bpcm_polls[] = {
-  // { txid,          rxid,          type,                           pid,    {s0,s1, s2,s3}, bus, proto }
-  { FT5E_BPCM_TXID, FT5E_BPCM_RXID, VEHICLE_POLL_TYPE_READDATA, 0x2001, {0, 30, 60, 0}, 1, ISOTP_STD },
-  POLL_LIST_END
-};
-
-// Dynamic poll table (room for pack status + cell DID + end marker)
-static OvmsPoller::poll_pid_t bpcm_polls_dyn[3];
+static OvmsPoller::poll_pid_t bpcm_polls_dyn[FT5E_POLL_MAX];
 
 
 // ── Constructor ────────────────────────────────────────────────────────────
@@ -95,15 +89,15 @@ OvmsVehicleFiat500e::OvmsVehicleFiat500e()
   ft_v_htrelec_pwr = MyMetrics.InitFloat("xse.v.b.htrelec.pwr", SM_STALE_MID, 0, Watts);
 
   // ── BMS cell voltage metrics ──────────────────────────────────────────────
-  // OVMS standard metrics v.b.c.voltage[n] are automatically published to
-  // MQTT as e.g. EV88283metric/v/b/c/voltage/0 … /95 once BmsSetCellVoltage()
-  // is called.  BmsSetCellDefaultThresholds sets the warning/alert thresholds.
   BmsSetCellDefaultThresholdsVoltage(0.050f, 0.100f);  // 50 mV warn, 100 mV alert
-  BmsSetCellArrangementVoltage(FT5E_CELL_COUNT, 1);  // 96 cells, 1 per module
-
-  // Informational metrics
+  BmsSetCellArrangementVoltage(FT5E_CELL_COUNT, 1);    // 96 cells, 1 per module
   MyMetrics.InitInt("xse.b.cell_did",   SM_STALE_HIGH, 0);
   MyMetrics.InitInt("xse.b.cell_count", SM_STALE_HIGH, 0);
+
+  // ── VCM / motor metrics ───────────────────────────────────────────────────
+  xse_v_m_torque       = MyMetrics.InitFloat("xse.v.m.torque",       SM_STALE_MID, 0, Nm);
+  xse_v_m_torque_tgt   = MyMetrics.InitFloat("xse.v.m.torque.tgt",   SM_STALE_MID, 0, Nm);
+  xse_v_m_coolant_temp = MyMetrics.InitFloat("xse.v.m.coolant.temp", SM_STALE_MID, 0, Celcius);
 
   // ── Cell DID from config ──────────────────────────────────────────────────
   m_cell_did = (uint16_t) MyConfig.GetParamValueInt("xse", "bpcm.cell_did", 0);
@@ -112,20 +106,7 @@ OvmsVehicleFiat500e::OvmsVehicleFiat500e()
            m_cell_did, m_cell_did ? "" : "  (disabled — run 'xse scan' to discover)");
 
   // ── Build dynamic poll table ──────────────────────────────────────────────
-  // Entry 0: pack status DID 0x2001 (always on)
-  memcpy(&bpcm_polls_dyn[0], &bpcm_polls[0], sizeof(OvmsPoller::poll_pid_t));
-
-  if (m_cell_did != 0) {
-    // Entry 1: cell voltage DID (poll every 30 s when on, 60 s charging)
-    bpcm_polls_dyn[1] = {
-      FT5E_BPCM_TXID, FT5E_BPCM_RXID,
-      VEHICLE_POLL_TYPE_READDATA, m_cell_did,
-      {0, 30, 60, 0}, 1, ISOTP_STD
-    };
-    bpcm_polls_dyn[2] = POLL_LIST_END;
-  } else {
-    bpcm_polls_dyn[1] = POLL_LIST_END;
-  }
+  BuildPollTable();
 
   // ── CAN buses ─────────────────────────────────────────────────────────────
   RegisterCanBus(1, CAN_MODE_ACTIVE, CAN_SPEED_500KBPS);
@@ -176,6 +157,88 @@ void OvmsVehicleFiat500e::UpdatePollState()
     PollSetState(1);
   else
     PollSetState(0);
+  }
+
+
+// ── Build UDS poll table ───────────────────────────────────────────────────
+
+void OvmsVehicleFiat500e::BuildPollTable()
+  {
+  int n = 0;
+
+  // ── VCM (ECU 0x42) — pack + driving data ───────────────────────────────
+  // DID 0x2001: legacy pack status (log only)
+  bpcm_polls_dyn[n++] = { FT5E_VCM_TXID, FT5E_VCM_RXID, VEHICLE_POLL_TYPE_READDATA,
+                           0x2001, {0, 30, 60, 0}, 1, ISOTP_STD };
+  // DID 0x203F: accelerator pedal position → ms_v_env_throttle
+  bpcm_polls_dyn[n++] = { FT5E_VCM_TXID, FT5E_VCM_RXID, VEHICLE_POLL_TYPE_READDATA,
+                           0x203F, {0, 5, 0, 0}, 1, ISOTP_STD };
+  // DID 0x2098: motor shaft RPM → ms_v_mot_rpm
+  bpcm_polls_dyn[n++] = { FT5E_VCM_TXID, FT5E_VCM_RXID, VEHICLE_POLL_TYPE_READDATA,
+                           0x2098, {0, 5, 0, 0}, 1, ISOTP_STD };
+  // DID 0x2090: motor torque → xse_v_m_torque
+  bpcm_polls_dyn[n++] = { FT5E_VCM_TXID, FT5E_VCM_RXID, VEHICLE_POLL_TYPE_READDATA,
+                           0x2090, {0, 5, 0, 0}, 1, ISOTP_STD };
+  // DID 0x2094: torque target → xse_v_m_torque_tgt
+  bpcm_polls_dyn[n++] = { FT5E_VCM_TXID, FT5E_VCM_RXID, VEHICLE_POLL_TYPE_READDATA,
+                           0x2094, {0, 5, 0, 0}, 1, ISOTP_STD };
+  // DID 0x204F: vehicle speed → ms_v_pos_speed
+  bpcm_polls_dyn[n++] = { FT5E_VCM_TXID, FT5E_VCM_RXID, VEHICLE_POLL_TYPE_READDATA,
+                           0x204F, {0, 5, 0, 0}, 1, ISOTP_STD };
+  // DID 0x2063: HV pack voltage → ms_v_bat_voltage
+  bpcm_polls_dyn[n++] = { FT5E_VCM_TXID, FT5E_VCM_RXID, VEHICLE_POLL_TYPE_READDATA,
+                           0x2063, {0, 30, 60, 0}, 1, ISOTP_STD };
+  // DID 0x200B: motor coolant temperature → xse_v_m_coolant_temp
+  bpcm_polls_dyn[n++] = { FT5E_VCM_TXID, FT5E_VCM_RXID, VEHICLE_POLL_TYPE_READDATA,
+                           0x200B, {0, 30, 0, 0}, 1, ISOTP_STD };
+
+  // ── BMS (ECU 0x44) — battery state ──────────────────────────────────────
+  // DID 0xA010: state of charge → ms_v_bat_soc
+  bpcm_polls_dyn[n++] = { FT5E_BMS_TXID, FT5E_BMS_RXID, VEHICLE_POLL_TYPE_READDATA,
+                           0xA010, {0, 30, 60, 0}, 1, ISOTP_STD };
+  // DID 0xA608: pack temperature → ms_v_bat_temp
+  bpcm_polls_dyn[n++] = { FT5E_BMS_TXID, FT5E_BMS_RXID, VEHICLE_POLL_TYPE_READDATA,
+                           0xA608, {0, 30, 60, 0}, 1, ISOTP_STD };
+  // DID 0xA012: battery current → ms_v_bat_current
+  bpcm_polls_dyn[n++] = { FT5E_BMS_TXID, FT5E_BMS_RXID, VEHICLE_POLL_TYPE_READDATA,
+                           0xA012, {0, 10, 30, 0}, 1, ISOTP_STD };
+  // DID 0xA042: 12 V auxiliary voltage → ms_v_bat_12v_voltage
+  bpcm_polls_dyn[n++] = { FT5E_BMS_TXID, FT5E_BMS_RXID, VEHICLE_POLL_TYPE_READDATA,
+                           0xA042, {0, 60, 60, 0}, 1, ISOTP_STD };
+
+  // ── OBC (ECU 0x47) — on-board charger ───────────────────────────────────
+  // DID 0x010A: AC charge current → ms_v_charge_current
+  bpcm_polls_dyn[n++] = { FT5E_OBC_TXID, FT5E_OBC_RXID, VEHICLE_POLL_TYPE_READDATA,
+                           0x010A, {0, 0, 30, 0}, 1, ISOTP_STD };
+
+  // ── VCM — ignition/key state ─────────────────────────────────────────────
+  // DID 0x0303: 01 = key on/ready, 00 = off → ms_v_env_on
+  // Polled in all states so PollState transitions correctly when car wakes up.
+  bpcm_polls_dyn[n++] = { FT5E_VCM_TXID, FT5E_VCM_RXID, VEHICLE_POLL_TYPE_READDATA,
+                           0x0303, {30, 5, 30, 0}, 1, ISOTP_STD };
+
+  // ── TPMS (ECU 0xA1, CAN2/B-CAN 50 kbps) ─────────────────────────────────
+  // DIDs 0x40A1–0x40A4: tire pressures, raw uint16 / 10 = kPa, pollbus=2
+  bpcm_polls_dyn[n++] = { FT5E_TPMS_TXID, FT5E_TPMS_RXID, VEHICLE_POLL_TYPE_READDATA,
+                           FT5E_TPMS_DID_FL, {0, 60, 0, 0}, 2, ISOTP_STD };
+  bpcm_polls_dyn[n++] = { FT5E_TPMS_TXID, FT5E_TPMS_RXID, VEHICLE_POLL_TYPE_READDATA,
+                           FT5E_TPMS_DID_FR, {0, 60, 0, 0}, 2, ISOTP_STD };
+  bpcm_polls_dyn[n++] = { FT5E_TPMS_TXID, FT5E_TPMS_RXID, VEHICLE_POLL_TYPE_READDATA,
+                           FT5E_TPMS_DID_RL, {0, 60, 0, 0}, 2, ISOTP_STD };
+  bpcm_polls_dyn[n++] = { FT5E_TPMS_TXID, FT5E_TPMS_RXID, VEHICLE_POLL_TYPE_READDATA,
+                           FT5E_TPMS_DID_RR, {0, 60, 0, 0}, 2, ISOTP_STD };
+
+  // ── Optional cell voltage DID (from config) ──────────────────────────────
+  if (m_cell_did != 0) {
+    bpcm_polls_dyn[n++] = { FT5E_VCM_TXID, FT5E_VCM_RXID, VEHICLE_POLL_TYPE_READDATA,
+                             m_cell_did, {0, 30, 60, 0}, 1, ISOTP_STD };
+  }
+
+  // End-of-list marker
+  bpcm_polls_dyn[n] = POLL_LIST_END;
+
+  ESP_LOGI(TAG, "Poll table built: %d entries (cell DID %s)",
+           n, m_cell_did ? "enabled" : "disabled");
   }
 
 
@@ -240,12 +303,9 @@ void OvmsVehicleFiat500e::IncomingPollReply(const OvmsPoller::poll_job_t &job,
   uint16_t pid = job.pid;
   switch (pid) {
 
-    // ── DID 0x2001: BPCM pack status ────────────────────────────────────────
-    // The exact layout of this DID is not publicly documented for the 500e.
-    // Log the raw bytes so the user can decode it.
-    // If it turns out to contain cell voltages, update DecodeCellVoltages().
+    // ── DID 0x2001: VCM pack status (log only) ──────────────────────────────
     case 0x2001:
-      ESP_LOGD(TAG, "BPCM DID 0x2001 (%u bytes):", length);
+      ESP_LOGD(TAG, "VCM DID 0x2001 (%u bytes):", length);
       for (int i = 0; i < length && i < 64; i += 8) {
         ESP_LOGD(TAG, "  [%02d] %02X %02X %02X %02X  %02X %02X %02X %02X", i,
           (i+0 < length ? data[i+0] : 0), (i+1 < length ? data[i+1] : 0),
@@ -253,8 +313,6 @@ void OvmsVehicleFiat500e::IncomingPollReply(const OvmsPoller::poll_job_t &job,
           (i+4 < length ? data[i+4] : 0), (i+5 < length ? data[i+5] : 0),
           (i+6 < length ? data[i+6] : 0), (i+7 < length ? data[i+7] : 0));
       }
-      // If the scan writer is active it will pick up raw CAN in IncomingFrameCan1;
-      // the poll reply path handles multi-frame responses via OVMS ISO-TP.
       if (m_scan_active && m_scan_writer) {
         m_scan_writer->printf("  DID 0x2001 → %u bytes", length);
         for (int i = 0; i < length && i < 32; i++)
@@ -262,6 +320,128 @@ void OvmsVehicleFiat500e::IncomingPollReply(const OvmsPoller::poll_job_t &job,
         if (length > 32) m_scan_writer->printf(" ...");
         m_scan_writer->printf("\n");
       }
+      break;
+
+    // ── VCM driving data ─────────────────────────────────────────────────────
+
+    // DID 0x203F: accelerator pedal position (0–100 %)
+    case 0x203F:
+      if (length >= 1)
+        StandardMetrics.ms_v_env_throttle->SetValue((float)data[0] / 255.0f * 100.0f);
+      break;
+
+    // DID 0x2098: motor shaft speed (raw - 32767 = RPM)
+    case 0x2098:
+      if (length >= 2) {
+        int16_t rpm = (int16_t)(((uint16_t)data[0] << 8) | data[1]) - 32767;
+        StandardMetrics.ms_v_mot_rpm->SetValue(rpm);
+      }
+      break;
+
+    // DID 0x2090: motor torque (raw - 1023 = Nm)
+    case 0x2090:
+      if (length >= 2)
+        xse_v_m_torque->SetValue((float)((int16_t)(((uint16_t)data[0] << 8) | data[1]) - 1023));
+      break;
+
+    // DID 0x2094: motor torque target (raw - 1023 = Nm)
+    case 0x2094:
+      if (length >= 2)
+        xse_v_m_torque_tgt->SetValue((float)((int16_t)(((uint16_t)data[0] << 8) | data[1]) - 1023));
+      break;
+
+    // DID 0x204F: vehicle speed (raw / 10 = km/h)
+    case 0x204F:
+      if (length >= 2)
+        StandardMetrics.ms_v_pos_speed->SetValue(
+          (float)(((uint16_t)data[0] << 8) | data[1]) / 10.0f);
+      break;
+
+    // DID 0x2063: HV pack voltage (raw = V)
+    case 0x2063:
+      if (length >= 2)
+        StandardMetrics.ms_v_bat_voltage->SetValue(
+          (float)(((uint16_t)data[0] << 8) | data[1]));
+      break;
+
+    // DID 0x200B: motor coolant temperature (data[2] - 40 = °C)
+    case 0x200B:
+      if (length >= 3)
+        xse_v_m_coolant_temp->SetValue((float)data[2] - 40.0f);
+      break;
+
+    // ── BMS battery data ──────────────────────────────────────────────────────
+
+    // DID 0xA010: state of charge (raw / 255 * 100 = %)
+    case 0xA010:
+      if (length >= 1)
+        StandardMetrics.ms_v_bat_soc->SetValue((float)data[0] / 255.0f * 100.0f);
+      break;
+
+    // DID 0xA608: pack temperature (raw - 50 = °C)
+    case 0xA608:
+      if (length >= 1)
+        StandardMetrics.ms_v_bat_temp->SetValue((float)data[0] - 50.0f);
+      break;
+
+    // DID 0xA012: battery current (raw / 20 = A)
+    case 0xA012:
+      if (length >= 2)
+        StandardMetrics.ms_v_bat_current->SetValue(
+          (float)(((uint16_t)data[0] << 8) | data[1]) / 20.0f);
+      break;
+
+    // DID 0xA042: 12 V auxiliary voltage (raw / 1000 = V)
+    case 0xA042:
+      if (length >= 2)
+        StandardMetrics.ms_v_bat_12v_voltage->SetValue(
+          (float)(((uint16_t)data[0] << 8) | data[1]) / 1000.0f);
+      break;
+
+    // ── VCM key/ignition state ────────────────────────────────────────────────
+
+    // DID 0x0303: key state (01 = on/ready, 00 = off) → ms_v_env_on
+    case 0x0303:
+      if (length >= 1)
+        StandardMetrics.ms_v_env_on->SetValue(data[0] != 0);
+      break;
+
+    // ── TPMS tire pressures (CAN-B, ECU 0xA1) ────────────────────────────────
+    // raw uint16 big-endian / 10 = kPa
+
+    // ms_v_tpms_pressure is OvmsMetricVector<float>[0..3] = FL, FR, RL, RR in kPa
+
+    case FT5E_TPMS_DID_FL:  // 0x40A1 front-left  → index 0
+      if (length >= 2)
+        StandardMetrics.ms_v_tpms_pressure->SetElemValue(
+          0, (float)(((uint16_t)data[0] << 8) | data[1]) / 10.0f, kPa);
+      break;
+
+    case FT5E_TPMS_DID_FR:  // 0x40A2 front-right → index 1
+      if (length >= 2)
+        StandardMetrics.ms_v_tpms_pressure->SetElemValue(
+          1, (float)(((uint16_t)data[0] << 8) | data[1]) / 10.0f, kPa);
+      break;
+
+    case FT5E_TPMS_DID_RL:  // 0x40A3 rear-left   → index 2
+      if (length >= 2)
+        StandardMetrics.ms_v_tpms_pressure->SetElemValue(
+          2, (float)(((uint16_t)data[0] << 8) | data[1]) / 10.0f, kPa);
+      break;
+
+    case FT5E_TPMS_DID_RR:  // 0x40A4 rear-right  → index 3
+      if (length >= 2)
+        StandardMetrics.ms_v_tpms_pressure->SetElemValue(
+          3, (float)(((uint16_t)data[0] << 8) | data[1]) / 10.0f, kPa);
+      break;
+
+    // ── OBC charger data ──────────────────────────────────────────────────────
+
+    // DID 0x010A: AC charge current (raw / 10 - 50 = A)
+    case 0x010A:
+      if (length >= 2)
+        StandardMetrics.ms_v_charge_current->SetValue(
+          (float)(((uint16_t)data[0] << 8) | data[1]) / 10.0f - 50.0f);
       break;
 
     // ── Configured cell voltage DID ──────────────────────────────────────────
@@ -487,6 +667,11 @@ void OvmsVehicleFiat500e::IncomingFrameCan1(CAN_frame_t* p_frame)
     }
 
   switch (p_frame->MsgID) {
+
+    case 0x10A006: // BRAKE_PEDAL (CAN-C passive)
+      // d[0]/255 * 100 = % pressed; map to footbrake bool
+      StandardMetrics.ms_v_env_footbrake->SetValue(d[0] > 0);
+      break;
 
     case 0xC10A040: // MSG31B_EVCU
       {

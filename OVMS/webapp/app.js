@@ -11,7 +11,39 @@ let _lastVehicleOn = null;
 let _lastCharging  = null;
 
 // --- Init ---
+// ── Credential helpers ─────────────────────────────────────────────────────
+const PASS_KEY = 'ovms_password';
+
+function getSavedPassword() { return localStorage.getItem(PASS_KEY); }
+function savePassword(pw)   { localStorage.setItem(PASS_KEY, pw); }
+function clearPassword()    { localStorage.removeItem(PASS_KEY); }
+
+function showSetupModal(onSave) {
+  const modal = document.getElementById('setupModal');
+  const input = document.getElementById('setupPassword');
+  const btn   = document.getElementById('setupSave');
+  const err   = document.getElementById('setupError');
+  if (!modal) return;
+  input.value = '';
+  err.style.display = 'none';
+  modal.style.display = 'flex';
+  input.focus();
+
+  const save = () => {
+    const pw = input.value.trim();
+    if (!pw) { err.textContent = 'Skriv inn passordet'; err.style.display = ''; return; }
+    savePassword(pw);
+    modal.style.display = 'none';
+    onSave(pw);
+  };
+  btn.onclick = save;
+  input.onkeydown = e => { if (e.key === 'Enter') save(); };
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  const savedPw = getSavedPassword();
+  OVMS_CONFIG.password = savedPw || '';
+
   ovms = new OVMSService(OVMS_CONFIG);
   window._ovms = ovms;
 
@@ -37,6 +69,16 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function connect() {
+  const pw = getSavedPassword();
+  if (!pw) {
+    showSetupModal(savedPw => {
+      ovms.config.password = savedPw;
+      setStatus('connecting');
+      ovms.connect();
+    });
+    return;
+  }
+  ovms.config.password = pw;
   setStatus('connecting');
   ovms.connect();
 }
@@ -101,6 +143,17 @@ function setupEventHandlers() {
   document.getElementById('btnReconnect').addEventListener('click', () => {
     ovms.disconnect();
     setTimeout(connect, 500);
+  });
+
+  // Change password button
+  document.getElementById('btnChangePassword')?.addEventListener('click', () => {
+    ovms.disconnect();
+    clearPassword();
+    showSetupModal(pw => {
+      ovms.config.password = pw;
+      setStatus('connecting');
+      ovms.connect();
+    });
   });
 
   // Nav tabs

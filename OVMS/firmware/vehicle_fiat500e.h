@@ -1,11 +1,12 @@
 /*
 ;    Project:       Open Vehicle Monitor System
 ;    Date:          5th July 2018
-;    Modified:      2026 — cell voltage polling added
+;    Modified:      2026 — UDS polling expanded (VCM + BMS + charger)
 ;
 ;    Changes:
 ;    1.0  Initial release
-;    1.1  Add UDS/ISO-TP BPCM polling and per-cell voltage metrics
+;    1.1  Add BPCM UDS polling and per-cell voltage metrics
+;    1.2  Add VCM driving data, BMS battery data, charger data polling
 ;
 ;    (C) 2021       Guenther Huck
 ;    (C) 2011       Michael Stegen / Stegen Electronics
@@ -23,28 +24,41 @@
 
 using namespace std;
 
-// ── BPCM UDS addresses (CAN1, 500 kbps, 29-bit extended IDs) ──────────────
-// Physical addressing: tester=0xF1, BPCM ECU=0x42
+// ── UDS addresses (CAN1, 500 kbps, 29-bit extended IDs) ──────────────────
 // Format: 0x18DA<ECU><TSTR> for request, 0x18DA<TSTR><ECU> for response
-#define FT5E_BPCM_TXID  0x18DA42F1   // tester → BPCM
-#define FT5E_BPCM_RXID  0x18DAF142   // BPCM  → tester
+
+// ECU 0x42 — VCM (Vehicle Control Module / inverter / motor controller)
+// Also used for cell-voltage BPCM scan (legacy naming kept)
+#define FT5E_VCM_TXID   0x18DA42F1
+#define FT5E_VCM_RXID   0x18DAF142
+#define FT5E_BPCM_TXID  FT5E_VCM_TXID   // back-compat alias
+#define FT5E_BPCM_RXID  FT5E_VCM_RXID
+
+// ECU 0x44 — BMS (Battery Management System)
+#define FT5E_BMS_TXID   0x18DA44F1
+#define FT5E_BMS_RXID   0x18DAF144
+
+// ECU 0x47 — OBC (On-Board Charger)
+#define FT5E_OBC_TXID   0x18DA47F1
+#define FT5E_OBC_RXID   0x18DAF147
+
+// ECU 0xA1 — TPMS (Tire Pressure Monitoring System), CAN2/B-CAN 50 kbps
+#define FT5E_TPMS_TXID    0x18DAA1F1
+#define FT5E_TPMS_RXID    0x18DAF1A1
+#define FT5E_TPMS_DID_FL  0x40A1   // front-left  tire pressure
+#define FT5E_TPMS_DID_FR  0x40A2   // front-right tire pressure
+#define FT5E_TPMS_DID_RL  0x40A3   // rear-left   tire pressure
+#define FT5E_TPMS_DID_RR  0x40A4   // rear-right  tire pressure
 
 // ── Battery pack geometry ──────────────────────────────────────────────────
-// 2013-2019 Fiat 500e: 24 kWh, 96 series cells (~3.3 V each, 374 V nominal)
 #define FT5E_CELL_COUNT 96
 
+// ── Poll table capacity ────────────────────────────────────────────────────
+#define FT5E_POLL_MAX   32
+
 // ── Known candidate DIDs for per-cell voltages (Bosch BMS) ────────────────
-// These are tried in order by the "xse scan auto" command.
-// Update xse.bpcm.cell_did once you find the right one.
 static const uint16_t FT5E_CELL_DID_CANDIDATES[] = {
-  0x4020,   // Common Bosch BMS cell voltage array
-  0x4000,   // Cell block 0
-  0x4030,   // Cell group data
-  0x2001,   // Pack general status (may embed cell block sub-records)
-  0x2010,   // Pack extended status
-  0x2100,   // BMS diagnostics
-  0xD001,   // Extended manufacturer data
-  0x0000    // sentinel
+  0x4020, 0x4000, 0x4030, 0x2001, 0x2010, 0x2100, 0xD001, 0x0000
 };
 
 
@@ -57,8 +71,6 @@ class OvmsVehicleFiat500e : public OvmsVehicle
   public:
     void IncomingFrameCan1(CAN_frame_t* p_frame) override;
     void IncomingFrameCan2(CAN_frame_t* p_frame) override;
-
-    // UDS poll reply handler
     void IncomingPollReply(const OvmsPoller::poll_job_t &job,
                            uint8_t* data, uint8_t length) override;
 
@@ -71,13 +83,10 @@ class OvmsVehicleFiat500e : public OvmsVehicle
     vehicle_command_t CommandDeactivateValet(const char* pin) override;
     vehicle_command_t CommandHomelink(int button, int durationms) override;
 
-    // Shell commands
     static void xse_cells(int verbosity, OvmsWriter* writer,
-                          OvmsCommand* cmd, int argc,
-                          const char* const* argv);
+                          OvmsCommand* cmd, int argc, const char* const* argv);
     static void xse_scan(int verbosity, OvmsWriter* writer,
-                         OvmsCommand* cmd, int argc,
-                         const char* const* argv);
+                         OvmsCommand* cmd, int argc, const char* const* argv);
 
   protected:
     void Ticker1(uint32_t ticker) override;
@@ -97,22 +106,26 @@ class OvmsVehicleFiat500e : public OvmsVehicle
     OvmsMetricFloat *ft_v_acelec_pwr;
     OvmsMetricFloat *ft_v_htrelec_pwr;
 
+    // ── VCM UDS metrics (new) ──────────────────────────────────────────────
+    OvmsMetricFloat *xse_v_m_torque;        // motor torque (Nm)
+    OvmsMetricFloat *xse_v_m_torque_tgt;    // torque target (Nm)
+    OvmsMetricFloat *xse_v_m_coolant_temp;  // motor coolant temp (°C)
+
     // ── Cell voltage polling ───────────────────────────────────────────────
-    uint16_t m_cell_did;       // active DID for cell voltages (0 = disabled)
-    int      m_cell_count;     // cells decoded in last reply (for validation)
+    uint16_t m_cell_did;
+    int      m_cell_count;
 
     // ── DID scan state ─────────────────────────────────────────────────────
-    // "xse scan <start> <end>" sends UDS 0x22 requests one per second
-    // and logs each BPCM response; used to discover cell-voltage DID.
     bool       m_scan_active;
-    uint16_t   m_scan_did;         // current scan DID
-    uint16_t   m_scan_did_end;     // last DID to scan (inclusive)
-    OvmsWriter *m_scan_writer;     // console to write results to
+    uint16_t   m_scan_did;
+    uint16_t   m_scan_did_end;
+    OvmsWriter *m_scan_writer;
 
     // ── Internal helpers ───────────────────────────────────────────────────
-    void SendBpcmRequest(uint16_t did);    // raw UDS 0x22 on CAN1
+    void SendBpcmRequest(uint16_t did);
     void DecodeCellVoltages(uint16_t did, uint8_t* data, uint8_t length);
     void UpdatePollState();
+    void BuildPollTable();
   };
 
 #endif // __VEHICLE_FIAT500E_H__
