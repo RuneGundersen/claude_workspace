@@ -271,9 +271,9 @@ function updateCharging() {
   badge.textContent  = isCharging ? '⚡ Lader' : state;
   badge.className    = 'charge-badge ' + (isCharging ? 'charging' : 'idle');
 
-  setText('chgPower',      chgPower,    'kW');
-  setText('chgVoltage',    chgVoltage,  'V');
-  setText('chgCurrent',    chgCurrent,  'A');
+  setText('chgPower',      isCharging ? chgPower   : null, 'kW');
+  setText('chgVoltage',    isCharging ? chgVoltage : null, 'V');
+  setText('chgCurrent',    isCharging ? chgCurrent : null, 'A');
   setText('chgType',       chgType,     '');
   setText('chgDuration',   duration,    '');
   setText('chgEfficiency', efficiency,  '%');
