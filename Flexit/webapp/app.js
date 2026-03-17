@@ -61,13 +61,6 @@ function connect() {
 
 function doConnect(password) {
   setStatus('connecting');
-  mqttClient = new Paho.Client(
-    FLEXIT_CONFIG.broker.replace('wss://', ''),
-    443,
-    FLEXIT_CONFIG.clientId
-  );
-
-  // Paho expects host/port separately; use full WSS URI
   mqttClient = new Paho.Client(FLEXIT_CONFIG.broker, FLEXIT_CONFIG.clientId);
 
   mqttClient.onConnectionLost = () => {
