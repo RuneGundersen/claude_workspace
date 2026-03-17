@@ -60,6 +60,10 @@ HR = {
     'extract_speed2':   5,
     'extract_speed3':   6,
     'set_temperature':  8,   # write value × 10
+    'supply_min_temp':  9,   # min supply air temp × 10
+    'supply_max_temp': 10,   # max supply air temp × 10
+    'regulation_type': 14,   # 0=temp control, 1=speed control
+    'cooling_active':  15,   # bool
     'forced_vent':     16,   # bool on/off
     'set_speed_mode':  17,   # 0=stop 1=min 2=normal 3=max
 }
@@ -72,21 +76,21 @@ SPEED_MODE_NAMES = {0: 'stop', 1: 'min', 2: 'normal', 3: 'max', 4: 'forced'}
 # ---------------------------------------------------------------------------
 
 def read_input_registers(client, address, count=1):
-    result = client.read_input_registers(address, count, slave=MODBUS_SLAVE)
+    result = client.read_input_registers(address, count=count, device_id=MODBUS_SLAVE)
     if result.isError():
         raise IOError(f'FC04 error at address {address}')
     return result.registers
 
 
 def read_holding_registers(client, address, count=1):
-    result = client.read_holding_registers(address, count, slave=MODBUS_SLAVE)
+    result = client.read_holding_registers(address, count=count, device_id=MODBUS_SLAVE)
     if result.isError():
         raise IOError(f'FC03 error at address {address}')
     return result.registers
 
 
 def write_register(client, address, value):
-    result = client.write_register(address, value, slave=MODBUS_SLAVE)
+    result = client.write_register(address, value, device_id=MODBUS_SLAVE)
     if result.isError():
         raise IOError(f'FC06 error writing address {address} = {value}')
     log.info(f'Wrote holding register {address} = {value}')
@@ -125,14 +129,18 @@ def poll_all(client):
     data['actual_speed_mode']  = ir('actual_speed_mode')
     data['speed_mode_name']    = SPEED_MODE_NAMES.get(data['actual_speed_mode'], '?')
 
-    # Read holding registers 0–6 (fan speed levels)
-    hr_raw = read_holding_registers(client, 0, 7)
-    data['supply_speed1']  = hr_raw[0]
-    data['supply_speed2']  = hr_raw[1]
-    data['supply_speed3']  = hr_raw[2]
-    data['extract_speed1'] = hr_raw[4]
-    data['extract_speed2'] = hr_raw[5]
-    data['extract_speed3'] = hr_raw[6]
+    # Read holding registers 0–15 (fan speeds + temp limits + regulation type)
+    hr_raw = read_holding_registers(client, 0, 16)
+    data['supply_speed1']    = hr_raw[0]
+    data['supply_speed2']    = hr_raw[1]
+    data['supply_speed3']    = hr_raw[2]
+    data['extract_speed1']   = hr_raw[4]
+    data['extract_speed2']   = hr_raw[5]
+    data['extract_speed3']   = hr_raw[6]
+    data['supply_min_temp']  = signed16(hr_raw[9])  / 10.0
+    data['supply_max_temp']  = signed16(hr_raw[10]) / 10.0
+    data['regulation_type']  = hr_raw[14]   # 0=temp, 1=speed
+    data['cooling_active']   = bool(hr_raw[15])
 
     data['timestamp'] = int(time.time())
     return data
@@ -190,6 +198,31 @@ def on_message(client, userdata, msg):
         elif cmd == 'forced_vent':
             # payload: "1" or "0"
             write_register(modbus, HR['forced_vent'], int(bool(int(payload))))
+        elif cmd == 'set_supply_speed1':
+            write_register(modbus, HR['supply_speed1'], max(0, min(100, int(payload))))
+        elif cmd == 'set_supply_speed2':
+            write_register(modbus, HR['supply_speed2'], max(0, min(100, int(payload))))
+        elif cmd == 'set_supply_speed3':
+            write_register(modbus, HR['supply_speed3'], max(0, min(100, int(payload))))
+        elif cmd == 'set_extract_speed1':
+            write_register(modbus, HR['extract_speed1'], max(0, min(100, int(payload))))
+        elif cmd == 'set_extract_speed2':
+            write_register(modbus, HR['extract_speed2'], max(0, min(100, int(payload))))
+        elif cmd == 'set_extract_speed3':
+            write_register(modbus, HR['extract_speed3'], max(0, min(100, int(payload))))
+        elif cmd == 'set_min_temp':
+            temp = float(payload)
+            if 5.0 <= temp <= 20.0:
+                write_register(modbus, HR['supply_min_temp'], int(temp * 10))
+        elif cmd == 'set_max_temp':
+            temp = float(payload)
+            if 15.0 <= temp <= 40.0:
+                write_register(modbus, HR['supply_max_temp'], int(temp * 10))
+        elif cmd == 'set_regulation_type':
+            # 0 = temperature control, 1 = speed control
+            write_register(modbus, HR['regulation_type'], int(payload) & 1)
+        elif cmd == 'set_cooling':
+            write_register(modbus, HR['cooling_active'], int(bool(int(payload))))
         else:
             log.warning(f'Unknown command: {cmd}')
     except Exception as e:

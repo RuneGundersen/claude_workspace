@@ -155,13 +155,32 @@ function render(d) {
   // Alarms
   renderAlarms(d);
 
-  // Fan speed config
+  // Fan speed config (info tab)
   setVal('s1Supply',  d.supply_speed1  + '%');
   setVal('s2Supply',  d.supply_speed2  + '%');
   setVal('s3Supply',  d.supply_speed3  + '%');
   setVal('s1Extract', d.extract_speed1 + '%');
   setVal('s2Extract', d.extract_speed2 + '%');
   setVal('s3Extract', d.extract_speed3 + '%');
+
+  // Service tab — populate inputs only if user hasn't started editing
+  populateSvcInput('svcS1', d.supply_speed1);
+  populateSvcInput('svcS2', d.supply_speed2);
+  populateSvcInput('svcS3', d.supply_speed3);
+  populateSvcInput('svcE1', d.extract_speed1);
+  populateSvcInput('svcE2', d.extract_speed2);
+  populateSvcInput('svcE3', d.extract_speed3);
+  populateSvcInput('svcMinTemp', d.supply_min_temp);
+  populateSvcInput('svcMaxTemp', d.supply_max_temp);
+
+  // Regulation type toggle
+  const isTemp = d.regulation_type === 0;
+  $('svcRegTemp').classList.toggle('active', isTemp);
+  $('svcRegSpeed').classList.toggle('active', !isTemp);
+
+  // Cooling toggle
+  $('svcCoolOn').classList.toggle('active',  d.cooling_active);
+  $('svcCoolOff').classList.toggle('active', !d.cooling_active);
 
   // Last update
   const ts = new Date(d.timestamp * 1000);
@@ -197,6 +216,50 @@ function renderAlarms(d) {
   $('alarmCard').style.display = any ? 'block' : 'none';
 }
 
+// ── Service tab helpers ───────────────────────────────────────────────────
+const SERVICE_PIN = '1000';
+let serviceUnlocked = false;
+
+function populateSvcInput(id, value) {
+  const el = $(id);
+  if (el && document.activeElement !== el) el.value = value;
+}
+
+function showPinModal(onUnlock) {
+  const modal = $('pinModal');
+  const input = $('pinInput');
+  const err   = $('pinError');
+  input.value = '';
+  err.style.display = 'none';
+  modal.style.display = 'flex';
+  setTimeout(() => input.focus(), 100);
+  const check = () => {
+    if (input.value === SERVICE_PIN) {
+      modal.style.display = 'none';
+      serviceUnlocked = true;
+      onUnlock();
+    } else {
+      err.style.display = '';
+      input.value = '';
+      input.focus();
+    }
+  };
+  $('pinConfirm').onclick = check;
+  input.onkeydown = e => { if (e.key === 'Enter') check(); };
+}
+
+function setRegulationType(type) {
+  publish('set_regulation_type', type);
+  $('svcRegTemp').classList.toggle('active',  type === 0);
+  $('svcRegSpeed').classList.toggle('active', type === 1);
+}
+
+function setCooling(val) {
+  publish('set_cooling', val);
+  $('svcCoolOn').classList.toggle('active',  val === 1);
+  $('svcCoolOff').classList.toggle('active', val === 0);
+}
+
 // ── Temperature slider ─────────────────────────────────────────────────────
 function initSlider() {
   const slider = $('tempSlider');
@@ -218,6 +281,35 @@ document.addEventListener('DOMContentLoaded', () => {
   // Speed buttons
   document.querySelectorAll('.speed-btn').forEach((btn, i) => {
     btn.addEventListener('click', () => setSpeedMode(i));
+  });
+
+  // Service tab — intercept click for PIN
+  $('tabService').addEventListener('click', e => {
+    if (!serviceUnlocked) {
+      e.stopImmediatePropagation();
+      showPinModal(() => {
+        // Activate the service panel manually after unlock
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        $('tabService').classList.add('active');
+        $('panelService').classList.add('active');
+      });
+    }
+  }, true); // capture phase so it runs before the generic nav handler
+
+  // Service save buttons
+  $('svcSaveSpeeds').addEventListener('click', () => {
+    publish('set_supply_speed1',  $('svcS1').value);
+    publish('set_supply_speed2',  $('svcS2').value);
+    publish('set_supply_speed3',  $('svcS3').value);
+    publish('set_extract_speed1', $('svcE1').value);
+    publish('set_extract_speed2', $('svcE2').value);
+    publish('set_extract_speed3', $('svcE3').value);
+  });
+
+  $('svcSaveTemps').addEventListener('click', () => {
+    publish('set_min_temp', $('svcMinTemp').value);
+    publish('set_max_temp', $('svcMaxTemp').value);
   });
 
   // Change password button

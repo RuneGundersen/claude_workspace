@@ -29,6 +29,7 @@
 <nav class="nav-bar">
   <button class="nav-tab active" data-panel="panelOverview">Oversikt</button>
   <button class="nav-tab"        data-panel="panelControl">Styring</button>
+  <button class="nav-tab"        data-panel="panelService" id="tabService">🔧 Service</button>
   <button class="nav-tab"        data-panel="panelInfo">Info</button>
 </nav>
 
@@ -140,6 +141,65 @@
 
 </div>
 
+<!-- ── Service panel ─────────────────────────────────────────────────────── -->
+<div id="panelService" class="tab-panel">
+
+  <div class="card">
+    <div class="card-title">Viftehastigheter (%)</div>
+    <table class="svc-table">
+      <thead><tr><th></th><th>Tilluft</th><th>Avtrekk</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Hastighet 1 (min)</td>
+          <td><input type="number" class="svc-input" id="svcS1" min="0" max="100"> %</td>
+          <td><input type="number" class="svc-input" id="svcE1" min="0" max="100"> %</td>
+        </tr>
+        <tr>
+          <td>Hastighet 2 (normal)</td>
+          <td><input type="number" class="svc-input" id="svcS2" min="0" max="100"> %</td>
+          <td><input type="number" class="svc-input" id="svcE2" min="0" max="100"> %</td>
+        </tr>
+        <tr>
+          <td>Hastighet 3 (maks)</td>
+          <td><input type="number" class="svc-input" id="svcS3" min="0" max="100"> %</td>
+          <td><input type="number" class="svc-input" id="svcE3" min="0" max="100"> %</td>
+        </tr>
+      </tbody>
+    </table>
+    <button class="apply-btn" style="margin-top:12px" id="svcSaveSpeeds">Lagre hastigheter</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Temperaturgrenser tilluft</div>
+    <div class="svc-row">
+      <label class="svc-label">Minimum</label>
+      <input type="number" class="svc-input" id="svcMinTemp" min="5" max="20" step="0.5"> °C
+    </div>
+    <div class="svc-row" style="margin-top:10px">
+      <label class="svc-label">Maksimum</label>
+      <input type="number" class="svc-input" id="svcMaxTemp" min="15" max="40" step="0.5"> °C
+    </div>
+    <button class="apply-btn" style="margin-top:12px" id="svcSaveTemps">Lagre grenser</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Reguleringstype</div>
+    <div class="svc-toggle-row">
+      <button class="svc-toggle-btn active" id="svcRegTemp" onclick="setRegulationType(0)">🌡️ Temperatur</button>
+      <button class="svc-toggle-btn"        id="svcRegSpeed" onclick="setRegulationType(1)">💨 Hastighet</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Kjøling</div>
+    <div class="svc-toggle-row">
+      <button class="svc-toggle-btn" id="svcCoolOn"  onclick="setCooling(1)">✅ På</button>
+      <button class="svc-toggle-btn active" id="svcCoolOff" onclick="setCooling(0)">❌ Av</button>
+    </div>
+  </div>
+
+</div>
+
 <!-- ── Info panel ────────────────────────────────────────────────────────── -->
 <div id="panelInfo" class="tab-panel">
 
@@ -163,6 +223,25 @@
     <div class="info-row"><span>Topic</span><span class="mono">flexit/UNI4</span></div>
   </div>
 
+</div>
+
+<!-- PIN modal -->
+<div id="pinModal" class="modal-overlay" style="display:none">
+  <div class="modal-box setup-box">
+    <div class="modal-header">
+      <span class="modal-title">🔒 Service-meny</span>
+    </div>
+    <div class="modal-content">
+      <p class="setup-desc">Skriv inn PIN-koden for å åpne service-menyen.</p>
+      <div class="setup-field">
+        <label class="setup-label">PIN-kode</label>
+        <input id="pinInput" type="password" inputmode="numeric" pattern="[0-9]*"
+               class="setup-input pin-input" placeholder="••••" maxlength="6" autocomplete="off">
+      </div>
+      <div id="pinError" class="setup-error" style="display:none">Feil PIN-kode</div>
+      <button id="pinConfirm" class="setup-btn">Lås opp</button>
+    </div>
+  </div>
 </div>
 
 <!-- Setup modal -->

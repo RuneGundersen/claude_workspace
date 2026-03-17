@@ -321,6 +321,79 @@ header {
 .modal-title { font-size: 15px; font-weight: 700; }
 .modal-content { padding: 16px; }
 
+/* ===== Service tab ===== */
+.svc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+.svc-table th {
+  text-align: left;
+  padding: 6px 8px;
+  color: var(--muted);
+  font-weight: 600;
+  border-bottom: 1px solid #21262d;
+}
+.svc-table td {
+  padding: 8px;
+  border-bottom: 1px solid #21262d;
+  color: var(--text);
+}
+.svc-table tr:last-child td { border-bottom: none; }
+
+.svc-input {
+  width: 60px;
+  background: var(--surface2);
+  border: 1px solid #21262d;
+  color: var(--text);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 14px;
+  text-align: center;
+  transition: border-color .2s;
+}
+.svc-input:focus { border-color: var(--blue); outline: none; }
+
+.svc-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text);
+}
+.svc-label { color: var(--muted); min-width: 80px; }
+
+.svc-toggle-row {
+  display: flex;
+  gap: 10px;
+}
+.svc-toggle-btn {
+  flex: 1;
+  padding: 12px;
+  background: var(--surface2);
+  border: 2px solid #21262d;
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: all .2s;
+}
+.svc-toggle-btn.active {
+  border-color: var(--blue);
+  background: rgba(68,147,248,.12);
+  color: var(--blue);
+}
+
+/* PIN input — larger digits */
+.pin-input {
+  font-size: 24px;
+  letter-spacing: 8px;
+  text-align: center;
+}
+
 /* ===== Setup modal ===== */
 .setup-desc {
   font-size: 13px;
