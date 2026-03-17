@@ -12,4 +12,10 @@ const HP_UNITS = [
     ip:   '192.168.55.126',
     icon: '🛏',
   },
+  {
+    id:   'flat1',
+    name: 'Flat 1',
+    ip:   '192.168.55.173',
+    icon: '🏢',
+  },
 ];
