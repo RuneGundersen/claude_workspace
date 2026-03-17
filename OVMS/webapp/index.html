@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="no">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
@@ -26,21 +26,21 @@
     <span id="recBadge" class="rec-badge" style="display:none">● REC</span>
     <div class="status-pill">
       <span id="statusDot" class="status-dot offline"></span>
-      <span id="statusText">Kobler til...</span>
+      <span id="statusText">Connecting...</span>
     </div>
-    <button id="btnReconnect" class="icon-btn" title="Koble til på nytt">↺</button>
+    <button id="btnReconnect" class="icon-btn" title="Reconnect">↺</button>
   </div>
 </header>
 
 <!-- Nav tabs -->
 <nav class="nav-bar">
-  <button class="nav-tab active" data-tab="battery">🔋 Batteri</button>
-  <button class="nav-tab" data-tab="charging">⚡ Lading</button>
-  <button class="nav-tab" data-tab="vehicle">🚘 Kjøretøy</button>
-  <button class="nav-tab" data-tab="map">🗺 Kart</button>
-  <button class="nav-tab" data-tab="history">📊 Historikk</button>
-  <button class="nav-tab" data-tab="control">🎮 Kontroll</button>
-  <button class="nav-tab" data-tab="diag">🔧 Diagnose</button>
+  <button class="nav-tab active" data-tab="battery">🔋 Battery</button>
+  <button class="nav-tab" data-tab="charging">⚡ Charging</button>
+  <button class="nav-tab" data-tab="vehicle">🚘 Vehicle</button>
+  <button class="nav-tab" data-tab="map">🗺 Map</button>
+  <button class="nav-tab" data-tab="history">📊 History</button>
+  <button class="nav-tab" data-tab="control">🎮 Control</button>
+  <button class="nav-tab" data-tab="diag">🔧 Diagnostics</button>
   <button class="nav-tab" data-tab="shell">💻 Shell</button>
 </nav>
 
@@ -49,19 +49,19 @@
 
   <!-- SOC Hero -->
   <div class="card soc-card">
-    <div class="soc-label">Batterinivå</div>
+    <div class="soc-label">Battery Level</div>
     <div id="socValue" class="soc-value">--%</div>
     <div class="soc-bar-bg">
       <div id="socBar" class="soc-fill green" style="width:0%"></div>
     </div>
     <div class="soc-range-row">
       <div class="soc-range-item">
-        <span class="soc-range-label">Est. rekkevidde</span>
+        <span class="soc-range-label">Est. range</span>
         <span id="rangeValue" class="range-val">--</span>
         <span class="range-unit">km</span>
       </div>
       <div class="soc-range-item">
-        <span class="soc-range-label">Ved full lading</span>
+        <span class="soc-range-label">At full charge</span>
         <span id="rangeFull" class="range-val">--</span>
         <span class="range-unit">km</span>
       </div>
@@ -70,18 +70,18 @@
 
   <!-- Electrical -->
   <div class="card">
-    <div class="card-title">Elektrisk</div>
+    <div class="card-title">Electrical</div>
     <div class="stat-grid">
       <div class="stat-item">
-        <span class="stat-label">Spenning</span>
+        <span class="stat-label">Voltage</span>
         <span id="battVoltage" class="stat-val">--</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Strøm</span>
+        <span class="stat-label">Current</span>
         <span id="battCurrent" class="stat-val">--</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Effekt</span>
+        <span class="stat-label">Power</span>
         <span id="battPower" class="stat-val">--</span>
       </div>
     </div>
@@ -89,22 +89,22 @@
 
   <!-- Health & Capacity -->
   <div class="card">
-    <div class="card-title">Helse &amp; Kapasitet</div>
+    <div class="card-title">Health &amp; Capacity</div>
     <div class="stat-grid">
       <div class="stat-item">
-        <span class="stat-label">Helse (SOH)</span>
+        <span class="stat-label">Health (SOH)</span>
         <span id="battHealth" class="stat-val">--</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Beregnet kap.</span>
+        <span class="stat-label">Calc. capacity</span>
         <span id="battCac" class="stat-val">--</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Nominell kap.</span>
+        <span class="stat-label">Nominal cap.</span>
         <span id="battCapacity" class="stat-val">--</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Sykluseller</span>
+        <span class="stat-label">Cycles</span>
         <span id="battCycles" class="stat-val">--</span>
       </div>
     </div>
@@ -112,22 +112,22 @@
 
   <!-- Temperature -->
   <div class="card">
-    <div class="card-title">Temperatur</div>
+    <div class="card-title">Temperature</div>
     <div class="stat-grid">
       <div class="stat-item">
-        <span class="stat-label">Batteri</span>
+        <span class="stat-label">Battery</span>
         <span id="battTemp" class="stat-val">--</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Min celle</span>
+        <span class="stat-label">Min cell</span>
         <span id="battTempMin" class="stat-val">--</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Maks celle</span>
+        <span class="stat-label">Max cell</span>
         <span id="battTempMax" class="stat-val">--</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Motortemp.</span>
+        <span class="stat-label">Motor temp.</span>
         <span id="motorTemp" class="stat-val">--</span>
       </div>
     </div>
@@ -135,22 +135,22 @@
 
   <!-- Energy Statistics -->
   <div class="card">
-    <div class="card-title">Energistatistikk</div>
+    <div class="card-title">Energy Statistics</div>
     <div class="stat-grid">
       <div class="stat-item stat-item--accent-red">
-        <span class="stat-label">Brukt energi</span>
+        <span class="stat-label">Energy used</span>
         <span id="battEnergyUsed" class="stat-val">--</span>
       </div>
       <div class="stat-item stat-item--accent-green">
-        <span class="stat-label">Gjenvunnet</span>
+        <span class="stat-label">Recovered</span>
         <span id="battEnergyRecd" class="stat-val">--</span>
       </div>
       <div class="stat-item stat-item--accent-red">
-        <span class="stat-label">Utladet (Ah)</span>
+        <span class="stat-label">Discharged (Ah)</span>
         <span id="battCoulombUsed" class="stat-val">--</span>
       </div>
       <div class="stat-item stat-item--accent-green">
-        <span class="stat-label">Gjenvunnet (Ah)</span>
+        <span class="stat-label">Recovered (Ah)</span>
         <span id="battCoulombRecd" class="stat-val">--</span>
       </div>
     </div>
@@ -158,18 +158,18 @@
 
   <!-- 12V Auxiliary Battery -->
   <div class="card">
-    <div class="card-title">12V Hjelpebatteri</div>
+    <div class="card-title">12V Auxiliary Battery</div>
     <div class="stat-grid">
       <div class="stat-item">
-        <span class="stat-label">Spenning</span>
+        <span class="stat-label">Voltage</span>
         <span id="batt12vVoltage" class="stat-val">--</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Strøm</span>
+        <span class="stat-label">Current</span>
         <span id="batt12vCurrent" class="stat-val">--</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Tilstand</span>
+        <span class="stat-label">State</span>
         <span id="batt12vState" class="stat-val">--</span>
       </div>
     </div>
@@ -177,12 +177,12 @@
 
   <!-- Cell Voltage Heatmap -->
   <div class="card">
-    <div class="card-title">Cellespenninger (96 celler)</div>
+    <div class="card-title">Cell Voltages (96 cells)</div>
 
     <!-- No-data state -->
     <div id="cellNoData" class="cell-nodata">
-      Ingen celledata tilgjengelig.<br>
-      <span style="font-size:12px">Krever tilpasset firmware med BPCM UDS-polling.<br>Se <code>OVMS/firmware/README_CELLS.md</code> for oppsett.</span>
+      No cell data available.<br>
+      <span style="font-size:12px">Requires custom firmware with BPCM UDS-polling.<br>See <code>OVMS/firmware/README_CELLS.md</code> for setup.</span>
     </div>
 
     <!-- Stats -->
@@ -198,7 +198,7 @@
       <span class="cell-legend-item"><i class="cell-v-warn"></i> 25–50 mV</span>
       <span class="cell-legend-item"><i class="cell-v-low"></i> 50–100 mV</span>
       <span class="cell-legend-item"><i class="cell-v-crit"></i> &gt;100 mV</span>
-      <span class="cell-legend-item"><i class="cell-v-none"></i> Ingen data</span>
+      <span class="cell-legend-item"><i class="cell-v-none"></i> No data</span>
     </div>
 
     <div id="cellTimestamp" class="cell-timestamp"></div>
@@ -209,21 +209,21 @@
 <!-- Charging Panel -->
 <div id="panel-charging" class="tab-panel">
   <div class="card">
-    <div class="card-title">Ladestatus</div>
+    <div class="card-title">Charging Status</div>
     <div style="margin-bottom:12px">
       <span id="chargeBadge" class="charge-badge idle">--</span>
     </div>
     <div class="stat-grid">
       <div class="stat-item">
-        <span class="stat-label">Effekt</span>
+        <span class="stat-label">Power</span>
         <span id="chgPower" class="stat-val">--</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Spenning</span>
+        <span class="stat-label">Voltage</span>
         <span id="chgVoltage" class="stat-val">--</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Strøm</span>
+        <span class="stat-label">Current</span>
         <span id="chgCurrent" class="stat-val">--</span>
       </div>
       <div class="stat-item">
@@ -231,11 +231,11 @@
         <span id="chgType" class="stat-val">--</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Varighet</span>
+        <span class="stat-label">Duration</span>
         <span id="chgDuration" class="stat-val">--</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Effektivitet</span>
+        <span class="stat-label">Efficiency</span>
         <span id="chgEfficiency" class="stat-val">--</span>
       </div>
     </div>
@@ -249,19 +249,19 @@
   <div class="card drive-card">
     <div class="drive-grid">
       <div class="drive-item">
-        <span class="drive-label">Batterinivå</span>
+        <span class="drive-label">Battery Level</span>
         <span id="dvSOC" class="drive-val">--%</span>
       </div>
       <div class="drive-item">
-        <span class="drive-label">Est. rekkevidde</span>
+        <span class="drive-label">Est. range</span>
         <span id="dvRange" class="drive-val">-- <small>km</small></span>
       </div>
       <div class="drive-item">
-        <span class="drive-label">Hastighet</span>
+        <span class="drive-label">Speed</span>
         <span id="dvSpeed" class="drive-val">-- <small>km/h</small></span>
       </div>
       <div class="drive-item">
-        <span class="drive-label">Forbruk</span>
+        <span class="drive-label">Consumption</span>
         <span id="dvConsumption" class="drive-val">--</span>
         <span class="drive-sublabel">kWh/100km</span>
       </div>
@@ -270,17 +270,17 @@
 
   <!-- TPMS -->
   <div class="card">
-    <div class="card-title">Dekktrykk</div>
+    <div class="card-title">Tyre Pressure</div>
     <div class="tpms-layout">
       <div class="tpms-row">
         <div class="tpms-tire" id="tpmsFL">
-          <span class="tpms-pos">F.V.</span>
+          <span class="tpms-pos">FL</span>
           <span class="tpms-val" id="tpmsFLval">--</span>
           <span class="tpms-unit">kPa</span>
         </div>
-        <div class="tpms-axle-lbl">Foran</div>
+        <div class="tpms-axle-lbl">Front</div>
         <div class="tpms-tire" id="tpmsFR">
-          <span class="tpms-pos">F.H.</span>
+          <span class="tpms-pos">FR</span>
           <span class="tpms-val" id="tpmsFRval">--</span>
           <span class="tpms-unit">kPa</span>
         </div>
@@ -288,13 +288,13 @@
       <div class="tpms-car-body">🚗</div>
       <div class="tpms-row">
         <div class="tpms-tire" id="tpmsRL">
-          <span class="tpms-pos">B.V.</span>
+          <span class="tpms-pos">RL</span>
           <span class="tpms-val" id="tpmsRLval">--</span>
           <span class="tpms-unit">kPa</span>
         </div>
-        <div class="tpms-axle-lbl">Bak</div>
+        <div class="tpms-axle-lbl">Rear</div>
         <div class="tpms-tire" id="tpmsRR">
-          <span class="tpms-pos">B.H.</span>
+          <span class="tpms-pos">RR</span>
           <span class="tpms-val" id="tpmsRRval">--</span>
           <span class="tpms-unit">kPa</span>
         </div>
@@ -311,56 +311,56 @@
     </div>
     <div class="stat-grid">
       <div class="stat-item">
-        <span class="stat-label">Hastighet</span>
+        <span class="stat-label">Speed</span>
         <span id="vSpeed" class="stat-val">--</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Kilometerstand</span>
+        <span class="stat-label">Odometer</span>
         <span id="vOdo" class="stat-val">--</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Gir</span>
+        <span class="stat-label">Gear</span>
         <span id="vGear" class="stat-val">--</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Kabintemp</span>
+        <span class="stat-label">Cabin temp</span>
         <span id="vCabin" class="stat-val">--</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Utetemperatur</span>
+        <span class="stat-label">Ambient temp</span>
         <span id="vAmbient" class="stat-val">--</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">12V batteri</span>
+        <span class="stat-label">12V battery</span>
         <span id="v12v" class="stat-val">--</span>
       </div>
     </div>
   </div>
   <div class="card">
-    <div class="card-title">Kjøretøyinfo</div>
+    <div class="card-title">Vehicle Info</div>
     <div class="info-row"><span>VIN</span><span id="vin" class="mono">--</span></div>
   </div>
 
   <!-- Drag forces — shown only while driving -->
   <div id="dragCard" class="card" style="display:none">
-    <div class="card-title">Kjøremotstand</div>
+    <div class="card-title">Driving Resistance</div>
 
     <!-- Summary row (2×2 grid) -->
     <div class="drag-summary">
       <div class="drag-summary-item">
-        <span class="drag-summary-lbl">Hastighet</span>
+        <span class="drag-summary-lbl">Speed</span>
         <span id="dragSpeed" class="drag-summary-val">--</span>
       </div>
       <div class="drag-summary-item">
-        <span class="drag-summary-lbl">Stigning</span>
+        <span class="drag-summary-lbl">Grade</span>
         <span id="dragGradePct" class="drag-summary-val">--</span>
       </div>
       <div class="drag-summary-item">
-        <span class="drag-summary-lbl">Effekt (motstand)</span>
+        <span class="drag-summary-lbl">Power (resistance)</span>
         <span id="dragPower" class="drag-summary-val drag-summary-power">--</span>
       </div>
       <div class="drag-summary-item">
-        <span class="drag-summary-lbl">Høyde (GPS)</span>
+        <span class="drag-summary-lbl">Altitude (GPS)</span>
         <span id="dragAlt" class="drag-summary-val">--</span>
       </div>
     </div>
@@ -370,7 +370,7 @@
 
       <div id="dragAero" class="drag-row">
         <div class="drag-label">
-          <span class="drag-name">Luftmotstand</span>
+          <span class="drag-name">Aerodynamic drag</span>
           <span id="dragAeroFrac" class="drag-frac">--%</span>
         </div>
         <div class="drag-bar-bg">
@@ -381,7 +381,7 @@
 
       <div id="dragRoll" class="drag-row">
         <div class="drag-label">
-          <span class="drag-name">Rullemotstand</span>
+          <span class="drag-name">Rolling resistance</span>
           <span id="dragRollFrac" class="drag-frac">--%</span>
         </div>
         <div class="drag-bar-bg">
@@ -394,7 +394,7 @@
       <div id="dragGradeRow" style="display:none">
         <div id="dragGrade" class="drag-row">
           <div class="drag-label">
-            <span class="drag-name">Bakkeresistans</span>
+            <span class="drag-name">Grade resistance</span>
             <span class="drag-frac"></span>
           </div>
           <div class="drag-bar-bg">
@@ -406,7 +406,7 @@
 
       <div id="dragTotal" class="drag-row drag-row--total">
         <div class="drag-label">
-          <span class="drag-name">Total motstand</span>
+          <span class="drag-name">Total resistance</span>
           <span class="drag-frac"></span>
         </div>
         <div class="drag-bar-bg">
@@ -419,7 +419,7 @@
 
     <!-- Constants footnote -->
     <div id="dragNote" class="drag-note">
-      Modell: Cd 0.311 · A 2.13 m² · Cr 0.011 · m 1450 kg · ingen vind
+      Model: Cd 0.311 · A 2.13 m² · Cr 0.011 · m 1450 kg · no wind
     </div>
   </div>
 
@@ -428,8 +428,8 @@
 <!-- Map Panel -->
 <div id="panel-map" class="tab-panel">
   <div class="card map-card">
-    <div class="card-title">Posisjon</div>
-    <div id="gpsCoords" class="gps-coords">Henter posisjon...</div>
+    <div class="card-title">Position</div>
+    <div id="gpsCoords" class="gps-coords">Fetching position...</div>
     <div id="mapContainer"></div>
   </div>
 </div>
@@ -437,9 +437,9 @@
 <!-- History Panel -->
 <div id="panel-history" class="tab-panel">
   <div class="subtab-bar">
-    <button class="subtab active" data-subtab="trips">🚗 Turer</button>
-    <button class="subtab" data-subtab="charges">⚡ Ladinger</button>
-    <button class="subtab" data-subtab="stats">📈 Statistikk</button>
+    <button class="subtab active" data-subtab="trips">🚗 Trips</button>
+    <button class="subtab" data-subtab="charges">⚡ Charges</button>
+    <button class="subtab" data-subtab="stats">📈 Statistics</button>
   </div>
   <div id="subtab-trips" class="subtab-panel">
     <div id="tripsList" class="history-list"></div>
@@ -451,20 +451,20 @@
 
     <!-- Summary -->
     <div class="card">
-      <div class="card-title">Oppsummering</div>
+      <div class="card-title">Summary</div>
       <div class="stat-grid">
-        <div class="stat-item"><span class="stat-label">Total kjørt</span><span id="statTotalKm" class="stat-val">--</span></div>
-        <div class="stat-item"><span class="stat-label">Snitt rekkevidde</span><span id="statAvgRange" class="stat-val">--</span></div>
-        <div class="stat-item"><span class="stat-label">Total ladet</span><span id="statTotalChg" class="stat-val">--</span></div>
-        <div class="stat-item"><span class="stat-label">Snitt per lading</span><span id="statAvgChg" class="stat-val">--</span></div>
-        <div class="stat-item"><span class="stat-label">Antall turer</span><span id="statTrips" class="stat-val">--</span></div>
-        <div class="stat-item"><span class="stat-label">Antall ladinger</span><span id="statCharges" class="stat-val">--</span></div>
+        <div class="stat-item"><span class="stat-label">Total driven</span><span id="statTotalKm" class="stat-val">--</span></div>
+        <div class="stat-item"><span class="stat-label">Avg. range</span><span id="statAvgRange" class="stat-val">--</span></div>
+        <div class="stat-item"><span class="stat-label">Total charged</span><span id="statTotalChg" class="stat-val">--</span></div>
+        <div class="stat-item"><span class="stat-label">Avg. per charge</span><span id="statAvgChg" class="stat-val">--</span></div>
+        <div class="stat-item"><span class="stat-label">No. of trips</span><span id="statTrips" class="stat-val">--</span></div>
+        <div class="stat-item"><span class="stat-label">No. of charges</span><span id="statCharges" class="stat-val">--</span></div>
       </div>
     </div>
 
     <!-- Trip chart -->
     <div class="card">
-      <div class="card-title">Turer — distanse og forbruk</div>
+      <div class="card-title">Trips — distance and consumption</div>
       <div id="chartTripsWrap" class="chart-wrap">
         <canvas id="chartTrips"></canvas>
       </div>
@@ -472,7 +472,7 @@
 
     <!-- Charge chart -->
     <div class="card">
-      <div class="card-title">Ladeøkter — energi og slutt-SOC</div>
+      <div class="card-title">Charge sessions — energy and end SOC</div>
       <div id="chartChargesWrap" class="chart-wrap">
         <canvas id="chartCharges"></canvas>
       </div>
@@ -480,7 +480,7 @@
 
     <!-- SOC trend -->
     <div class="card">
-      <div class="card-title">SOC-trend over turer</div>
+      <div class="card-title">SOC trend over trips</div>
       <div id="chartSocWrap" class="chart-wrap">
         <canvas id="chartSocTrend"></canvas>
       </div>
@@ -497,67 +497,67 @@
 
   <!-- Climate -->
   <div class="card">
-    <div class="card-title">Klima</div>
+    <div class="card-title">Climate</div>
     <div class="cmd-grid">
-      <button class="cmd-btn" data-cmd="climate on" data-label="Forvarming på"
-              data-confirm="Start forvarming av bilen?">
+      <button class="cmd-btn" data-cmd="climate on" data-label="Pre-heat on"
+              data-confirm="Start pre-heating the car?">
         <span class="cmd-icon">🔥</span>
-        <span class="cmd-label">Forvarming på</span>
+        <span class="cmd-label">Pre-heat on</span>
       </button>
-      <button class="cmd-btn" data-cmd="climate off" data-label="Klima av"
-              data-confirm="Slå av klimaanlegget?">
+      <button class="cmd-btn" data-cmd="climate off" data-label="Climate off"
+              data-confirm="Turn off climate control?">
         <span class="cmd-icon">❄️</span>
-        <span class="cmd-label">Klima av</span>
+        <span class="cmd-label">Climate off</span>
       </button>
     </div>
   </div>
 
   <!-- Doors -->
   <div class="card">
-    <div class="card-title">Dører</div>
+    <div class="card-title">Doors</div>
     <div class="cmd-grid">
-      <button class="cmd-btn cmd-btn--safe" data-cmd="lock" data-label="Lås"
-              data-confirm="Lås bilen?">
+      <button class="cmd-btn cmd-btn--safe" data-cmd="lock" data-label="Lock"
+              data-confirm="Lock the car?">
         <span class="cmd-icon">🔒</span>
-        <span class="cmd-label">Lås</span>
+        <span class="cmd-label">Lock</span>
       </button>
-      <button class="cmd-btn cmd-btn--warn" data-cmd="unlock" data-label="Lås opp"
-              data-confirm="Lås opp bilen?">
+      <button class="cmd-btn cmd-btn--warn" data-cmd="unlock" data-label="Unlock"
+              data-confirm="Unlock the car?">
         <span class="cmd-icon">🔓</span>
-        <span class="cmd-label">Lås opp</span>
+        <span class="cmd-label">Unlock</span>
       </button>
     </div>
   </div>
 
   <!-- Charging -->
   <div class="card">
-    <div class="card-title">Lading</div>
+    <div class="card-title">Charging</div>
     <div class="cmd-grid">
-      <button class="cmd-btn cmd-btn--safe" data-cmd="charge start" data-label="Start lading"
-              data-confirm="Start lading?">
+      <button class="cmd-btn cmd-btn--safe" data-cmd="charge start" data-label="Start charging"
+              data-confirm="Start charging?">
         <span class="cmd-icon">⚡</span>
-        <span class="cmd-label">Start lading</span>
+        <span class="cmd-label">Start charging</span>
       </button>
-      <button class="cmd-btn cmd-btn--warn" data-cmd="charge stop" data-label="Stopp lading"
-              data-confirm="Stopp lading?">
+      <button class="cmd-btn cmd-btn--warn" data-cmd="charge stop" data-label="Stop charging"
+              data-confirm="Stop charging?">
         <span class="cmd-icon">⏹</span>
-        <span class="cmd-label">Stopp lading</span>
+        <span class="cmd-label">Stop charging</span>
       </button>
     </div>
   </div>
 
   <!-- Other -->
   <div class="card">
-    <div class="card-title">Annet</div>
+    <div class="card-title">Other</div>
     <div class="cmd-grid">
-      <button class="cmd-btn" data-cmd="wakeup" data-label="Vekk bilen"
-              data-confirm="Send vekk-signal til bilen?">
+      <button class="cmd-btn" data-cmd="wakeup" data-label="Wake car"
+              data-confirm="Send wake signal to car?">
         <span class="cmd-icon">💡</span>
-        <span class="cmd-label">Vekk bilen</span>
+        <span class="cmd-label">Wake car</span>
       </button>
-      <button class="cmd-btn" data-cmd="stat" data-label="Hent status">
+      <button class="cmd-btn" data-cmd="stat" data-label="Get status">
         <span class="cmd-icon">📋</span>
-        <span class="cmd-label">Hent status</span>
+        <span class="cmd-label">Get status</span>
       </button>
       <button class="cmd-btn" data-cmd="homelink 1" data-label="Homelink 1"
               data-confirm="Send Homelink 1?">
@@ -574,53 +574,53 @@
 
   <!-- Command log -->
   <div class="card">
-    <div class="card-title">Kommandologg</div>
+    <div class="card-title">Command Log</div>
     <div id="cmdLog" class="cmd-log"></div>
   </div>
 
   <!-- Connection settings -->
   <div class="card">
-    <div class="card-title">Tilkobling</div>
-    <button id="btnChangePassword" class="setup-btn setup-btn--outline">🔑 Endre passord</button>
+    <div class="card-title">Connection</div>
+    <button id="btnChangePassword" class="setup-btn setup-btn--outline">🔑 Change password</button>
   </div>
 
   <!-- Notification settings -->
   <div class="card">
-    <div class="card-title">Varsler</div>
+    <div class="card-title">Notifications</div>
     <div id="notifPermRow" class="notif-perm-row">
-      <span id="notifStatus" class="notif-status">Varsler ikke aktivert</span>
-      <button id="btnEnableNotif" class="btn-notif">🔔 Aktiver varsler</button>
+      <span id="notifStatus" class="notif-status">Notifications not enabled</span>
+      <button id="btnEnableNotif" class="btn-notif">🔔 Enable notifications</button>
     </div>
     <div id="notifRules" class="notif-rules" style="display:none">
       <label class="notif-rule">
         <input type="checkbox" id="ruleChargeStart" checked>
-        <span>⚡ Lading startet</span>
+        <span>⚡ Charging started</span>
       </label>
       <label class="notif-rule">
         <input type="checkbox" id="ruleChargeDone" checked>
-        <span>✅ Lading fullført</span>
-        <span class="notif-threshold">ved &ge; <input type="number" id="threshChargeDone" value="80" min="50" max="100" class="notif-input">%</span>
+        <span>✅ Charging complete</span>
+        <span class="notif-threshold">at &ge; <input type="number" id="threshChargeDone" value="80" min="50" max="100" class="notif-input">%</span>
       </label>
       <label class="notif-rule">
         <input type="checkbox" id="ruleSocLow" checked>
-        <span>🔋 Lavt batteri</span>
-        <span class="notif-threshold">under <input type="number" id="threshSocLow" value="20" min="5" max="50" class="notif-input">%</span>
+        <span>🔋 Low battery</span>
+        <span class="notif-threshold">below <input type="number" id="threshSocLow" value="20" min="5" max="50" class="notif-input">%</span>
       </label>
       <label class="notif-rule">
         <input type="checkbox" id="ruleSocCritical" checked>
-        <span>🚨 Kritisk lavt batteri</span>
-        <span class="notif-threshold">under <input type="number" id="threshSocCritical" value="10" min="5" max="20" class="notif-input">%</span>
+        <span>🚨 Critical battery</span>
+        <span class="notif-threshold">below <input type="number" id="threshSocCritical" value="10" min="5" max="20" class="notif-input">%</span>
       </label>
       <label class="notif-rule">
         <input type="checkbox" id="ruleBattTempHigh">
-        <span>🌡️ Høy batteritemperatur</span>
-        <span class="notif-threshold">over <input type="number" id="threshBattTempHigh" value="42" min="30" max="60" class="notif-input">°C</span>
+        <span>🌡️ High battery temperature</span>
+        <span class="notif-threshold">above <input type="number" id="threshBattTempHigh" value="42" min="30" max="60" class="notif-input">°C</span>
       </label>
       <label class="notif-rule">
         <input type="checkbox" id="ruleCarUnlocked">
-        <span>🔓 Bilen låst opp</span>
+        <span>🔓 Car unlocked</span>
       </label>
-      <button id="btnSaveNotif" class="btn-notif-save">Lagre innstillinger</button>
+      <button id="btnSaveNotif" class="btn-notif-save">Save settings</button>
     </div>
   </div>
 
@@ -634,46 +634,46 @@
 
   <!-- Stored DTCs -->
   <div class="card">
-    <div class="card-title">Lagrede feilkoder (Mode 03)</div>
+    <div class="card-title">Stored Fault Codes (Mode 03)</div>
     <div class="diag-btn-row">
       <button id="btnReadDTC" class="cmd-btn">
         <span class="cmd-icon">🔍</span>
-        <span class="cmd-label">Les feilkoder</span>
+        <span class="cmd-label">Read fault codes</span>
       </button>
       <button id="btnReadPending" class="cmd-btn">
         <span class="cmd-icon">🕐</span>
-        <span class="cmd-label">Ventende feil</span>
+        <span class="cmd-label">Pending faults</span>
       </button>
     </div>
     <div id="diagLastScan" class="diag-timestamp"></div>
     <div id="dtcStoredList" class="dtc-list">
-      <div class="dtc-empty">Trykk «Les feilkoder» for å skanne</div>
+      <div class="dtc-empty">Press «Read fault codes» to scan</div>
     </div>
   </div>
 
   <!-- Pending DTCs -->
   <div class="card">
-    <div class="card-title">Ventende feilkoder (Mode 07)</div>
+    <div class="card-title">Pending Fault Codes (Mode 07)</div>
     <div id="dtcPendingList" class="dtc-list">
-      <div class="dtc-empty">Trykk «Ventende feil» for å skanne</div>
+      <div class="dtc-empty">Press «Pending faults» to scan</div>
     </div>
   </div>
 
   <!-- Clear DTCs -->
   <div class="card">
-    <div class="card-title">Slett feilkoder</div>
-    <p class="diag-warn-text">⚠️ Sletter alle lagrede og ventende feilkoder fra alle ECU-er. Gjør dette bare etter å ha notert kodene.</p>
+    <div class="card-title">Clear Fault Codes</div>
+    <p class="diag-warn-text">⚠️ Clears all stored and pending fault codes from all ECUs. Only do this after noting the codes.</p>
     <button id="btnClearDTC" class="cmd-btn cmd-btn--warn" style="width:100%">
       <span class="cmd-icon">🗑️</span>
-      <span class="cmd-label">Slett alle feilkoder (Mode 04)</span>
+      <span class="cmd-label">Clear all fault codes (Mode 04)</span>
     </button>
   </div>
 
   <!-- OVMS Alerts -->
   <div class="card">
-    <div class="card-title">OVMS-varsler</div>
+    <div class="card-title">OVMS Alerts</div>
     <div id="diagOvmsAlerts" class="dtc-list">
-      <div class="dtc-empty">Ingen aktive varsler</div>
+      <div class="dtc-empty">No active alerts</div>
     </div>
   </div>
 
@@ -694,7 +694,7 @@
       word-break: break-all;
     "></div>
     <div style="display:flex;gap:8px;padding:10px;background:#111;border-top:1px solid #222">
-      <input id="shellInput" type="text" placeholder="Skriv kommando…" autocomplete="off" autocorrect="off"
+      <input id="shellInput" type="text" placeholder="Enter command…" autocomplete="off" autocorrect="off"
         spellcheck="false" style="
           flex:1;background:#1a1a1a;color:#fff;border:1px solid #333;
           border-radius:6px;padding:8px 12px;font-family:monospace;font-size:13px;
@@ -720,7 +720,7 @@
 
 <!-- Debug panel -->
 <div style="margin:12px;background:#111;border:1px solid #333;border-radius:10px;padding:12px;">
-  <div style="font-size:11px;color:#888;margin-bottom:6px;">🔧 Tilkoblingslogg</div>
+  <div style="font-size:11px;color:#888;margin-bottom:6px;">🔧 Connection log</div>
   <div style="font-size:11px;color:#aaa;">Broker: <span id="brokerUrl" style="color:#4a90d9"></span></div>
   <textarea id="debugLog" readonly style="width:100%;height:80px;background:#000;color:#0f0;font-family:monospace;font-size:10px;border:none;margin-top:8px;resize:none;border-radius:6px;padding:6px;"></textarea>
 </div>
@@ -729,17 +729,17 @@
 <div id="setupModal" class="modal-overlay" style="display:none">
   <div class="modal-box setup-box">
     <div class="modal-header">
-      <span class="modal-title">🔐 Koble til OVMS</span>
+      <span class="modal-title">🔐 Connect to OVMS</span>
     </div>
     <div class="modal-content">
-      <p class="setup-desc">Skriv inn MQTT-passordet for å koble til bilen. Det lagres kun i nettleseren din og sendes aldri noe sted.</p>
+      <p class="setup-desc">Enter the MQTT password to connect to the car. It is stored only in your browser and never sent anywhere.</p>
       <div class="setup-field">
-        <label class="setup-label">Passord</label>
+        <label class="setup-label">Password</label>
         <input id="setupPassword" type="password" class="setup-input"
-               placeholder="MQTT-passord" autocomplete="current-password" />
+               placeholder="MQTT password" autocomplete="current-password" />
       </div>
       <div id="setupError" class="setup-error" style="display:none"></div>
-      <button id="setupSave" class="setup-btn">Koble til</button>
+      <button id="setupSave" class="setup-btn">Connect</button>
     </div>
   </div>
 </div>

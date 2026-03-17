@@ -38,7 +38,7 @@ class OVMSService {
       this.emit('connected');
       this.client.subscribe(`${this.topicPrefix}metric/#`);
       this.client.subscribe(`${this.topicPrefix}event/#`);
-      this.client.subscribe(`${this.topicPrefix}response/#`);
+      this.client.subscribe(`${this.topicPrefix}client/${this.config.clientId}/response/#`);
       this._startHeartbeat();
     });
 
@@ -50,7 +50,7 @@ class OVMSService {
       const value = payload.toString();
 
       // Command response
-      const respPrefix = `${this.topicPrefix}response/`;
+      const respPrefix = `${this.topicPrefix}client/${this.config.clientId}/response/`;
       if (topic.startsWith(respPrefix)) {
         const cmdId   = topic.slice(respPrefix.length);
         const pending = this._pendingCmds[cmdId];
@@ -94,14 +94,13 @@ class OVMSService {
   }
 
   sendCommand(cmd, timeoutMs = 12000) {
-    if (!this.connected) return Promise.reject(new Error('Ikke tilkoblet til bilen'));
+    if (!this.connected) return Promise.reject(new Error('Not connected to car'));
     return new Promise((resolve, reject) => {
-      const cmdId        = Date.now().toString();
-      const cmdTopic     = `${this.topicPrefix}command/${cmdId}`;
-      const responseTopic = `${this.topicPrefix}response/${cmdId}`;
+      const cmdId    = Date.now().toString();
+      const cmdTopic = `${this.topicPrefix}client/${this.config.clientId}/command/${cmdId}`;
       const timer = setTimeout(() => {
         delete this._pendingCmds[cmdId];
-        reject(new Error('Tidsavbrudd — bilen svarte ikke'));
+        reject(new Error('Timeout — car did not respond'));
       }, timeoutMs);
       this._pendingCmds[cmdId] = { resolve, reject, timer };
       // Subscribe to specific response topic (already covered by wildcard, but be explicit)

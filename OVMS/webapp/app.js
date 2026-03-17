@@ -86,7 +86,7 @@ function connect() {
 function setupEventHandlers() {
   ovms.on('connected', () => {
     setStatus('online');
-    showDebug('Tilkoblet: ' + OVMS_CONFIG.broker);
+    showDebug('Connected: ' + OVMS_CONFIG.broker);
     updateInterval = setInterval(refreshUI, 2000);
   });
 
@@ -97,7 +97,7 @@ function setupEventHandlers() {
 
   ovms.on('reconnecting', () => {
     setStatus('connecting');
-    showDebug('Kobler til: ' + OVMS_CONFIG.broker);
+    showDebug('Connecting: ' + OVMS_CONFIG.broker);
   });
 
   ovms.on('error', msg => {
@@ -135,7 +135,7 @@ function setupEventHandlers() {
       logger.startCharge(ovms);
       showDebug('Ladeøkt startet — logger aktivert');
     } else {
-      logger.endCharge(ovms).then(c => c && showDebug(`Lading avsluttet: SOC ${c.startSOC}% → ${c.endSOC}%`));
+      logger.endCharge(ovms).then(c => c && showDebug(`Charge ended: SOC ${c.startSOC}% → ${c.endSOC}%`));
     }
   });
 
@@ -268,7 +268,7 @@ function updateCharging() {
   const efficiency  = ovms.getFloat('v.c.efficiency', 1);
 
   const badge = document.getElementById('chargeBadge');
-  badge.textContent  = isCharging ? '⚡ Lader' : state;
+  badge.textContent  = isCharging ? '⚡ Charging' : state;
   badge.className    = 'charge-badge ' + (isCharging ? 'charging' : 'idle');
 
   setText('chgPower',      isCharging ? chgPower   : null, 'kW');
@@ -338,7 +338,7 @@ function updateVehicle() {
   const v12      = ovms.getFloat('v.b.12v.voltage', 2);
 
   setText('vSpeed',    speed,    'km/h');
-  setText('vOdo',      odometer !== null ? odometer.toLocaleString('no-NO') : null, 'km');
+  setText('vOdo',      odometer !== null ? odometer.toLocaleString('en-GB') : null, 'km');
   setText('vGear',     gear,     '');
   setText('vCabin',    cabinTemp,'°C');
   setText('vAmbient',  ambientTemp, '°C');
@@ -378,7 +378,7 @@ function updateVehicle() {
 
   const lockIcon = document.getElementById('vLocked');
   if (locked !== null) {
-    lockIcon.textContent = locked ? '🔒 Låst' : '🔓 Ulåst';
+    lockIcon.textContent = locked ? '🔒 Locked' : '🔓 Unlocked';
     lockIcon.className   = locked ? 'badge locked' : 'badge unlocked';
   }
   const onIcon = document.getElementById('vOn');
@@ -438,7 +438,7 @@ function setText(id, value, unit) {
 function setStatus(state) {
   const dot  = document.getElementById('statusDot');
   const text = document.getElementById('statusText');
-  const labels = { online: 'Tilkoblet', offline: 'Frakoblet', connecting: 'Kobler til...' };
+  const labels = { online: 'Connected', offline: 'Disconnected', connecting: 'Connecting...' };
   dot.className  = 'status-dot ' + state;
   text.textContent = labels[state] || state;
 }
@@ -465,17 +465,17 @@ function setupNotifUI(alerts) {
   function updatePermUI() {
     const p = alerts.permission;
     if (p === 'granted') {
-      status.textContent = '🔔 Varsler er aktivert';
+      status.textContent = '🔔 Notifications enabled';
       status.style.color = 'var(--green)';
       btn.style.display  = 'none';
       rules.style.display = '';
       loadNotifSettings(alerts);
     } else if (p === 'denied') {
-      status.textContent = '🔕 Varsler blokkert i nettleseren';
+      status.textContent = '🔕 Notifications blocked in browser';
       status.style.color = 'var(--red)';
       btn.style.display  = 'none';
     } else if (p === 'unsupported') {
-      status.textContent = 'Varsler støttes ikke av denne nettleseren';
+      status.textContent = 'Notifications not supported by this browser';
     } else {
       status.textContent = 'Trykk for å aktivere push-varsler';
     }
@@ -484,12 +484,12 @@ function setupNotifUI(alerts) {
   btn.addEventListener('click', async () => {
     const ok = await alerts.requestPermission();
     updatePermUI();
-    if (ok) showToast('Varsler aktivert!');
+    if (ok) showToast('Notifications enabled!');
   });
 
   document.getElementById('btnSaveNotif')?.addEventListener('click', () => {
     saveNotifSettings(alerts);
-    showToast('Varselinnstillinger lagret');
+    showToast('Notification settings saved');
   });
 
   updatePermUI();
@@ -538,7 +538,7 @@ function setupCommandButtons() {
       if (confirm && !window.confirm(confirm)) return;
 
       if (!ovms.connected) {
-        showCmdResponse('error', 'Ikke tilkoblet — kan ikke sende kommando');
+        showCmdResponse('error', 'Not connected — cannot send command');
         return;
       }
 
@@ -556,7 +556,7 @@ function setupCommandButtons() {
       } catch (e) {
         showCmdResponse('error', e.message);
         logCommand(label, 'error', e.message);
-        showDebug(`Kommando feil [${label}]: ${e.message}`);
+        showDebug(`Command error [${label}]: ${e.message}`);
       } finally {
         document.querySelectorAll('.cmd-btn').forEach(b => b.disabled = false);
         btn.classList.remove('loading');
