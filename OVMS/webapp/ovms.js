@@ -7,7 +7,7 @@ class OVMSService {
     this.connected = false;
     this.metrics = {};
     this.listeners = {};
-    this.topicPrefix = config.vehicleId;  // OVMS v2 format: EV88283metric/...
+    this.topicPrefix = `ovms/${config.username}/${config.vin}/`;  // OVMS v3 format: ovms/EV88283/VIN/
     this._pendingCmds = {};               // cmdId -> { resolve, reject, timer }
   }
 
