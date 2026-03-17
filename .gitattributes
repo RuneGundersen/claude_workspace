@@ -1,0 +1,5 @@
+# Shell scripts must always use LF (they run on Linux)
+*.sh text eol=lf
+
+# Python files — LF preferred
+*.py text eol=lf
