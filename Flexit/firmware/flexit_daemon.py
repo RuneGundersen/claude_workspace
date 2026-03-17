@@ -229,6 +229,12 @@ def main():
         log.error('MQTT connect timeout — check credentials/broker')
         sys.exit(1)
 
+    # Wait for USB serial port (adapter may not be plugged in yet)
+    import os
+    while not os.path.exists(MODBUS_PORT):
+        log.warning(f'Serial port {MODBUS_PORT} not found — waiting for Waveshare adapter…')
+        time.sleep(10)
+
     # Connect Modbus
     modbus = ModbusSerialClient(
         port=MODBUS_PORT,
