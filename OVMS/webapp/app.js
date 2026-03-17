@@ -31,7 +31,7 @@ function showSetupModal(onSave) {
 
   const save = () => {
     const pw = input.value.trim();
-    if (!pw) { err.textContent = 'Skriv inn passordet'; err.style.display = ''; return; }
+    if (!pw) { err.textContent = 'Please enter the password'; err.style.display = ''; return; }
     savePassword(pw);
     modal.style.display = 'none';
     onSave(pw);
@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const shell = new OVMSShell(ovms);
 
   logger = new OVMSLogger();
-  logger.init().catch(e => showDebug('Logger-feil: ' + e));
+  logger.init().catch(e => showDebug('Logger error: ' + e));
   logger.onTripStart   = () => updateRecordingBadge();
   logger.onTripEnd     = () => { updateRecordingBadge(); if (_historyTabActive()) refreshHistory(); };
   logger.onChargeStart = () => updateRecordingBadge();
@@ -120,9 +120,9 @@ function setupEventHandlers() {
     _lastVehicleOn = isOn;
     if (isOn) {
       logger.startTrip(ovms);
-      showDebug('Tur startet — logger aktivert');
+      showDebug('Trip started — logger active');
     } else {
-      logger.endTrip(ovms).then(t => t && showDebug(`Tur avsluttet: ${t.points?.length ?? 0} punkter`));
+      logger.endTrip(ovms).then(t => t && showDebug(`Trip ended: ${t.points?.length ?? 0} points`));
     }
   });
 
@@ -133,7 +133,7 @@ function setupEventHandlers() {
     _lastCharging = isCharging;
     if (isCharging) {
       logger.startCharge(ovms);
-      showDebug('Ladeøkt startet — logger aktivert');
+      showDebug('Charge session started — logger active');
     } else {
       logger.endCharge(ovms).then(c => c && showDebug(`Charge ended: SOC ${c.startSOC}% → ${c.endSOC}%`));
     }
@@ -316,11 +316,11 @@ function updateTpms() {
     if (anyCrit) {
       alert.style.display = '';
       alert.className = 'tpms-alert tpms-alert--crit';
-      alert.textContent = '🚨 Kritisk lavt dekktrykk — stopp bilen';
+      alert.textContent = '🚨 Critical tyre pressure — stop the car';
     } else if (anyLow) {
       alert.style.display = '';
       alert.className = 'tpms-alert tpms-alert--low';
-      alert.textContent = '⚠️ Lavt dekktrykk — sjekk dekkene';
+      alert.textContent = '⚠️ Low tyre pressure — check tyres';
     } else {
       alert.style.display = 'none';
     }
@@ -383,7 +383,7 @@ function updateVehicle() {
   }
   const onIcon = document.getElementById('vOn');
   if (on !== null) {
-    onIcon.textContent = on ? '🟢 På' : '🔴 Av';
+    onIcon.textContent = on ? '🟢 On' : '🔴 Off';
   }
 }
 
@@ -477,7 +477,7 @@ function setupNotifUI(alerts) {
     } else if (p === 'unsupported') {
       status.textContent = 'Notifications not supported by this browser';
     } else {
-      status.textContent = 'Trykk for å aktivere push-varsler';
+      status.textContent = 'Press to enable push notifications';
     }
   }
 
@@ -545,14 +545,15 @@ function setupCommandButtons() {
       // Disable buttons, show spinner
       document.querySelectorAll('.cmd-btn').forEach(b => b.disabled = true);
       btn.classList.add('loading');
-      showCmdResponse('pending', `Sender: ${label}...`);
+      showCmdResponse('pending', `Sending: ${label}...`);
 
       try {
-        const response = await ovms.sendCommand(cmd);
+        const resolvedCmd = cmd.replace('{pin}', OVMS_CONFIG.vehiclePin);
+        const response = await ovms.sendCommand(resolvedCmd);
         const msg = response?.trim() || 'OK';
         showCmdResponse('success', msg);
         logCommand(label, 'success', msg);
-        showDebug(`Kommando OK [${label}]: ${msg}`);
+        showDebug(`Command OK [${label}]: ${msg}`);
       } catch (e) {
         showCmdResponse('error', e.message);
         logCommand(label, 'error', e.message);
@@ -577,7 +578,7 @@ function showCmdResponse(type, msg) {
 function logCommand(label, status, msg) {
   const log = document.getElementById('cmdLog');
   if (!log) return;
-  const ts   = new Date().toLocaleTimeString('no-NO');
+  const ts   = new Date().toLocaleTimeString('en-GB');
   const row  = document.createElement('div');
   row.className = 'cmd-log-row ' + status;
   row.innerHTML = `<span class="cmd-log-time">${ts}</span>
@@ -611,6 +612,6 @@ function _historyTabActive() {
 function showDebug(msg) {
   const d = document.getElementById('debugLog');
   if (!d) return;
-  const ts = new Date().toLocaleTimeString('no-NO');
+  const ts = new Date().toLocaleTimeString('en-GB');
   d.textContent = `[${ts}] ${msg}\n` + d.textContent;
 }
