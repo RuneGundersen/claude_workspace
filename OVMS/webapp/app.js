@@ -333,7 +333,7 @@ function updateVehicle() {
   const gear     = ovms.get('v.e.gear') ?? '--';
   const locked   = ovms.getBool('v.e.locked');
   const on       = ovms.getBool('v.e.on');
-  const cabinTemp = ovms.getFloat('v.e.cabintemp', 1) / 10;  // FT5E reports in tenths of °C
+  const cabinTemp = ovms.getFloat('v.e.cabintemp', 2) / 100;  // FT5E reports in hundredths of °C
   const ambientTemp = ovms.getFloat('v.e.temp', 1);
   const v12      = ovms.getFloat('v.b.12v.voltage', 2);
 
