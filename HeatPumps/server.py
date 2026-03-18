@@ -39,6 +39,12 @@ _toshiba_token_time = 0
 _token_lock         = threading.Lock()
 TOKEN_TTL           = 3600   # refresh token after 1 hour
 
+# Optimistic state cache: ac_id -> {'state': dict, 'expires': float}
+# Keeps last-sent state for 90s so polls don't revert while cloud syncs
+_state_cache  = {}
+_cache_lock   = threading.Lock()
+CACHE_TTL     = 90
+
 def _load_secrets():
     if not os.path.exists(SECRETS_FILE):
         return None, None
@@ -159,6 +165,12 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
         if not ac_id:
             self.send_error(400, 'Missing acId')
             return
+        # Return cached optimistic state if still fresh
+        with _cache_lock:
+            cached = _state_cache.get(ac_id)
+            if cached and time.time() < cached['expires']:
+                self._ok('application/json', json.dumps(cached['state']).encode())
+                return
         try:
             raw  = _toshiba_get_state(ac_id)
             state = _decode_state(raw['ACStateData'])
@@ -184,6 +196,9 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             raw       = _toshiba_get_state(ac_id)
             new_hex   = _encode_state(raw['ACStateData'], changes)
             new_state = _decode_state(new_hex)
+            # Store optimistic state in cache for CACHE_TTL seconds
+            with _cache_lock:
+                _state_cache[ac_id] = {'state': new_state, 'expires': time.time() + CACHE_TTL}
             # Fire AMQP command in background — return optimistic state immediately
             def _bg(ac_id=ac_id, changes=changes):
                 try:
@@ -191,6 +206,10 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
                     print(f'[toshiba] set OK: {changes}', flush=True)
                 except Exception as e:
                     print(f'[toshiba] set FAILED: {e}', flush=True)
+                finally:
+                    # Clear cache so next poll gets fresh cloud state
+                    with _cache_lock:
+                        _state_cache.pop(ac_id, None)
             t = threading.Thread(target=_bg, daemon=True)
             t.start()
             self._ok('application/json', json.dumps(new_state).encode())
