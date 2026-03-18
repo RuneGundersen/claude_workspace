@@ -180,14 +180,15 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         try:
-            _toshiba_send(ac_id, changes)
-            # Re-fetch state to confirm (give device a moment)
-            import time; time.sleep(1)
+            # Get current cloud state, apply changes optimistically, send via AMQP
             raw       = _toshiba_get_state(ac_id)
-            new_state = _decode_state(raw['ACStateData'])
+            new_hex   = _encode_state(raw['ACStateData'], changes)
+            new_state = _decode_state(new_hex)
+            _toshiba_send(ac_id, changes)   # fire AMQP command
+            # Return optimistic state immediately — don't wait for cloud to update
             self._ok('application/json', json.dumps(new_state).encode())
         except Exception as e:
-            self.send_error(502, str(e).encode('utf-8', errors='replace'))
+            self.send_error(502, str(e))
 
     # ── Helper ─────────────────────────────────────────────────────────────
 

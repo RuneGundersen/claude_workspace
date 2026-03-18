@@ -172,9 +172,9 @@ function renderCard(unit, ctrl, sensor) {
   // Fan dir
   card.querySelector('.fdir-val').textContent = FAN_DIRS[fDir] ?? fDir;
 
-  // Sync slider
+  // Sync slider (skip if user is actively dragging)
   const slider = card.querySelector('.temp-slider');
-  if (stemp !== null && !isNaN(stemp)) { slider.value = stemp; slider.step = '0.5'; }
+  if (stemp !== null && !isNaN(stemp) && !slider._active?.()) slider.value = stemp;
 }
 
 // --- Send command ---
@@ -226,7 +226,7 @@ function renderToshibaCard(unit, state) {
   card.querySelector('.outdoor-temp').textContent = '';
   card.querySelector('.stemp-val').textContent    = state.setpoint != null ? `${state.setpoint}°C` : '--';
   const slider = card.querySelector('.temp-slider');
-  if (state.setpoint != null) slider.value = state.setpoint;
+  if (state.setpoint != null && !slider._active?.()) slider.value = state.setpoint;
 
   card.querySelectorAll('.btn-mode').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.mode === state.mode);
@@ -275,7 +275,7 @@ function cardHTML(unit) {
       <div class="settemp-wrap">
         <div class="temp-label">Set</div>
         <div class="stemp-val">--</div>
-        <input class="temp-slider" type="range" min="16" max="30" step="1" value="20">
+        <input class="temp-slider" type="range" min="16" max="30" step="0.5" value="20">
       </div>
     </div>
 
@@ -302,6 +302,12 @@ function cardHTML(unit) {
 function attachCardListeners(unit) {
   const card = document.getElementById('card-' + unit.id);
 
+  // Set slider range based on unit type
+  const slider = card.querySelector('.temp-slider');
+  slider.min  = unit.type === 'toshiba' ? '5'   : '16';
+  slider.step = unit.type === 'toshiba' ? '1'   : '0.5';
+  slider.max  = '30';
+
   // Power toggle
   card.querySelector('.btn-power').addEventListener('click', () => {
     const isOn = unitState[unit.ip]?.ctrl?.pow === '1';
@@ -316,17 +322,25 @@ function attachCardListeners(unit) {
     });
   });
 
-  // Temperature slider
-  let sliderTimer = null;
-  card.querySelector('.temp-slider').addEventListener('input', e => {
-    card.querySelector('.stemp-val').textContent = e.target.value + '°C';
+  // Temperature slider — debounce send, block poll override while active
+  let sliderTimer  = null;
+  let sliderActive = false;
+  const sliderEl   = card.querySelector('.temp-slider');
+
+  sliderEl.addEventListener('input', e => {
+    sliderActive = true;
+    card.querySelector('.stemp-val').textContent = parseFloat(e.target.value).toFixed(unit.type === 'toshiba' ? 0 : 1) + '°C';
     clearTimeout(sliderTimer);
     sliderTimer = setTimeout(() => {
       const val = parseFloat(e.target.value);
       const key = unit.type === 'toshiba' ? 'setpoint' : 'stemp';
       sendControl(unit, { [key]: unit.type === 'toshiba' ? val : val.toFixed(1) });
+      setTimeout(() => { sliderActive = false; }, 10000); // unblock after 10s
     }, 600);
   });
+
+  // Expose flag so renderCard can skip slider update while user is dragging
+  sliderEl._active = () => sliderActive;
 
   // Fan speed
   card.querySelectorAll('.btn-fan').forEach(btn => {
