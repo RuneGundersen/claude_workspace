@@ -180,17 +180,14 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         try:
-            # Get current raw state, patch it, send via toshiba-ac library
-            raw     = _toshiba_get_state(ac_id)
-            new_hex = _encode_state(raw['ACStateData'], changes)
-            _toshiba_send(ac_id, raw.get('ACDeviceUniqueId', ''), new_hex)
-            new_state = _decode_state(new_hex)
+            _toshiba_send(ac_id, changes)
+            # Re-fetch state to confirm (give device a moment)
+            import time; time.sleep(1)
+            raw       = _toshiba_get_state(ac_id)
+            new_state = _decode_state(raw['ACStateData'])
             self._ok('application/json', json.dumps(new_state).encode())
-        except NotImplementedError:
-            # Friendly message when toshiba-ac package not installed
-            self.send_error(501, 'Install toshiba-ac package on Pi: pip install toshiba-ac')
         except Exception as e:
-            self.send_error(502, str(e))
+            self.send_error(502, str(e).encode('utf-8', errors='replace'))
 
     # ── Helper ─────────────────────────────────────────────────────────────
 
@@ -212,31 +209,53 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
 
 # ── Toshiba AMQP control (requires toshiba-ac package) ─────────────────────
 
-def _toshiba_send(ac_id, device_unique_id, new_hex):
+def _toshiba_send(ac_id, changes):
     """
-    Send new state to Toshiba unit via Azure IoT Hub (AMQP).
+    Send state changes to Toshiba unit via Azure IoT Hub (AMQP).
     Requires: pip install toshiba-ac
     """
-    try:
-        import asyncio
-        from toshiba_ac.device_manager import ToshibaAcDeviceManager
+    import asyncio
+    from toshiba_ac.device_manager import ToshibaAcDeviceManager
+    from toshiba_ac.device.properties import (
+        ToshibaAcStatus, ToshibaAcMode, ToshibaAcFanMode,
+    )
 
-        username, password = _load_secrets()
+    MODE_MAP = {
+        'auto': ToshibaAcMode.AUTO, 'cool': ToshibaAcMode.COOL,
+        'heat': ToshibaAcMode.HEAT, 'dry':  ToshibaAcMode.DRY,
+        'fan':  ToshibaAcMode.FAN,
+    }
+    FAN_MAP = {
+        'auto':  ToshibaAcFanMode.AUTO,  'quiet': ToshibaAcFanMode.QUIET,
+        '1':     ToshibaAcFanMode.LOW,   '2':     ToshibaAcFanMode.MEDIUM_LOW,
+        '3':     ToshibaAcFanMode.MEDIUM,'4':     ToshibaAcFanMode.MEDIUM_HIGH,
+        '5':     ToshibaAcFanMode.HIGH,
+    }
 
-        async def _send():
-            mgr = ToshibaAcDeviceManager(username=username, password=password)
-            await mgr.connect()
-            devices = await mgr.get_devices()
-            for dev in devices:
-                if str(dev.ac_id).lower() == ac_id.lower():
-                    await dev.set_ac_state(new_hex)
-                    break
-            await mgr.disconnect()
+    username, password = _load_secrets()
 
-        asyncio.run(_send())
+    async def _send():
+        mgr = ToshibaAcDeviceManager(username=username, password=password)
+        await mgr.connect()
+        devices = await mgr.get_devices()
+        dev = next((d for d in devices if str(d.ac_id).lower() == ac_id.lower()), None)
+        if not dev:
+            raise RuntimeError(f'Device {ac_id} not found')
+        await dev.connect()
 
-    except ImportError:
-        raise NotImplementedError('toshiba-ac not installed')
+        if 'power' in changes:
+            await dev.set_ac_status(
+                ToshibaAcStatus.ON if changes['power'] == 'on' else ToshibaAcStatus.OFF)
+        if 'mode' in changes:
+            await dev.set_ac_mode(MODE_MAP[changes['mode']])
+        if 'setpoint' in changes:
+            await dev.set_ac_temperature(int(changes['setpoint']))
+        if 'fan' in changes:
+            await dev.set_ac_fan_mode(FAN_MAP[changes['fan']])
+
+        await mgr.shutdown()
+
+    asyncio.run(_send())
 
 
 # ── Main ────────────────────────────────────────────────────────────────────

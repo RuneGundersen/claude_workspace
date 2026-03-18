@@ -171,6 +171,10 @@ function renderCard(unit, ctrl, sensor) {
 
   // Fan dir
   card.querySelector('.fdir-val').textContent = FAN_DIRS[fDir] ?? fDir;
+
+  // Sync slider
+  const slider = card.querySelector('.temp-slider');
+  if (stemp !== null && !isNaN(stemp)) { slider.value = stemp; slider.step = '0.5'; }
 }
 
 // --- Send command ---
@@ -221,6 +225,8 @@ function renderToshibaCard(unit, state) {
   card.querySelector('.room-temp').textContent    = state.roomTemp != null ? `${state.roomTemp}°C` : '--';
   card.querySelector('.outdoor-temp').textContent = '';
   card.querySelector('.stemp-val').textContent    = state.setpoint != null ? `${state.setpoint}°C` : '--';
+  const slider = card.querySelector('.temp-slider');
+  if (state.setpoint != null) slider.value = state.setpoint;
 
   card.querySelectorAll('.btn-mode').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.mode === state.mode);
@@ -268,11 +274,8 @@ function cardHTML(unit) {
       </div>
       <div class="settemp-wrap">
         <div class="temp-label">Set</div>
-        <div class="settemp-row">
-          <button class="btn btn-adj" data-adj="-0.5">−</button>
-          <span class="stemp-val">--</span>
-          <button class="btn btn-adj" data-adj="+0.5">+</button>
-        </div>
+        <div class="stemp-val">--</div>
+        <input class="temp-slider" type="range" min="16" max="30" step="1" value="20">
       </div>
     </div>
 
@@ -313,18 +316,16 @@ function attachCardListeners(unit) {
     });
   });
 
-  // Temperature
-  card.querySelectorAll('.btn-adj').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const s = unitState[unit.id];
-      const curr = unit.type === 'toshiba'
-        ? (s?.toshiba?.setpoint ?? 20)
-        : parseFloat(s?.ctrl?.stemp ?? '20');
-      const delta = parseFloat(btn.dataset.adj);
-      const next  = Math.min(30, Math.max(16, Math.round((curr + delta) * 2) / 2));
-      const key   = unit.type === 'toshiba' ? 'setpoint' : 'stemp';
-      sendControl(unit, { [key]: unit.type === 'toshiba' ? next : next.toFixed(1) });
-    });
+  // Temperature slider
+  let sliderTimer = null;
+  card.querySelector('.temp-slider').addEventListener('input', e => {
+    card.querySelector('.stemp-val').textContent = e.target.value + '°C';
+    clearTimeout(sliderTimer);
+    sliderTimer = setTimeout(() => {
+      const val = parseFloat(e.target.value);
+      const key = unit.type === 'toshiba' ? 'setpoint' : 'stemp';
+      sendControl(unit, { [key]: unit.type === 'toshiba' ? val : val.toFixed(1) });
+    }, 600);
   });
 
   // Fan speed
