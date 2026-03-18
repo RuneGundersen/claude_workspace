@@ -1,6 +1,24 @@
-// Heat Pump Dashboard — Daikin BRP069 local API
+// Heat Pump Dashboard — Daikin BRP069 local + Toshiba cloud API
 
-// --- API helpers ---
+// --- Toshiba API helpers ---
+
+async function toshibaGetState(acId) {
+  const resp = await fetch(`/toshiba/state?acId=${acId}`);
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${await resp.text()}`);
+  return resp.json();   // { power, mode, temp, fan, raw, updatedAt }
+}
+
+async function toshibaSet(acId, changes) {
+  const resp = await fetch('/toshiba/set', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ acId, changes }),
+  });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${await resp.text()}`);
+  return resp.json();
+}
+
+// --- Daikin API helpers ---
 
 function apiUrl(ip, path) {
   return `/api/${ip}/${path}`;
@@ -89,12 +107,18 @@ async function pollUnit(unit) {
   const card = document.getElementById('card-' + unit.id);
   if (!card) return;
   try {
-    const [ctrl, sensor] = await Promise.all([
-      daikinGet(unit.ip, 'aircon/get_control_info'),
-      daikinGet(unit.ip, 'aircon/get_sensor_info'),
-    ]);
-    unitState[unit.ip] = { ctrl, sensor };
-    renderCard(unit, ctrl, sensor);
+    if (unit.type === 'toshiba') {
+      const state = await toshibaGetState(unit.acId);
+      unitState[unit.id] = { toshiba: state };
+      renderToshibaCard(unit, state);
+    } else {
+      const [ctrl, sensor] = await Promise.all([
+        daikinGet(unit.ip, 'aircon/get_control_info'),
+        daikinGet(unit.ip, 'aircon/get_sensor_info'),
+      ]);
+      unitState[unit.id] = { ctrl, sensor };
+      renderCard(unit, ctrl, sensor);
+    }
     card.classList.remove('card--error');
     card.querySelector('.card-status').textContent = '';
   } catch (e) {
@@ -152,33 +176,60 @@ function renderCard(unit, ctrl, sensor) {
 // --- Send command ---
 
 async function sendControl(unit, changes) {
-  const state = unitState[unit.ip];
-  if (!state) return;
-  const ctrl = state.ctrl;
-
-  const params = {
-    pow:    ctrl.pow,
-    mode:   ctrl.mode,
-    stemp:  ctrl.stemp,
-    shum:   ctrl.shum   || '0',
-    f_rate: ctrl.f_rate,
-    f_dir:  ctrl.f_dir,
-    ...changes,
-  };
-
   const card = document.getElementById('card-' + unit.id);
   card.querySelector('.card-status').textContent = '⏳ Sending…';
 
   try {
-    await daikinSet(unit.ip, params);
-    // Merge into local state optimistically
-    Object.assign(state.ctrl, params);
-    renderCard(unit, state.ctrl, state.sensor);
+    if (unit.type === 'toshiba') {
+      const newState = await toshibaSet(unit.acId, changes);
+      unitState[unit.id].toshiba = newState;
+      renderToshibaCard(unit, newState);
+    } else {
+      const state = unitState[unit.id];
+      const ctrl  = state.ctrl;
+      const params = {
+        pow:    ctrl.pow,
+        mode:   ctrl.mode,
+        stemp:  ctrl.stemp,
+        shum:   ctrl.shum || '0',
+        f_rate: ctrl.f_rate,
+        f_dir:  ctrl.f_dir,
+        ...changes,
+      };
+      await daikinSet(unit.ip, params);
+      Object.assign(state.ctrl, params);
+      renderCard(unit, state.ctrl, state.sensor);
+    }
     card.querySelector('.card-status').textContent = '✅ Done';
     setTimeout(() => { card.querySelector('.card-status').textContent = ''; }, 2000);
   } catch (e) {
     card.querySelector('.card-status').textContent = '❌ ' + e.message;
   }
+}
+
+// --- Toshiba card ---
+
+function renderToshibaCard(unit, state) {
+  const card   = document.getElementById('card-' + unit.id);
+  const isOn   = state.power === 'on';
+
+  card.classList.toggle('card--on',  isOn);
+  card.classList.toggle('card--off', !isOn);
+
+  card.querySelector('.btn-power').textContent = isOn ? '⏻ On' : '⏻ Off';
+  card.querySelector('.btn-power').classList.toggle('active', isOn);
+  card.querySelector('.room-temp').textContent  = state.temp != null ? `${state.temp}°C` : '--';
+  card.querySelector('.outdoor-temp').textContent = '';
+
+  card.querySelector('.stemp-val').textContent = state.temp != null ? `${state.temp}°C` : '--';
+
+  card.querySelectorAll('.btn-mode').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === state.mode);
+  });
+  card.querySelectorAll('.btn-fan').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.fan === state.fan);
+  });
+  card.querySelector('.fdir-val').textContent = '--';   // Toshiba swing not yet decoded
 }
 
 // --- Build cards ---
@@ -257,16 +308,23 @@ function attachCardListeners(unit) {
 
   // Mode
   card.querySelectorAll('.btn-mode').forEach(btn => {
-    btn.addEventListener('click', () => sendControl(unit, { mode: btn.dataset.mode }));
+    btn.addEventListener('click', () => {
+      const key = unit.type === 'toshiba' ? 'mode' : 'mode';
+      sendControl(unit, { [key]: btn.dataset.mode });
+    });
   });
 
   // Temperature
   card.querySelectorAll('.btn-adj').forEach(btn => {
     btn.addEventListener('click', () => {
-      const curr = parseFloat(unitState[unit.ip]?.ctrl?.stemp ?? '20');
+      const s = unitState[unit.id];
+      const curr = unit.type === 'toshiba'
+        ? (s?.toshiba?.temp ?? 20)
+        : parseFloat(s?.ctrl?.stemp ?? '20');
       const delta = parseFloat(btn.dataset.adj);
-      const next = Math.min(30, Math.max(16, curr + delta));
-      sendControl(unit, { stemp: next.toFixed(1) });
+      const next  = Math.min(30, Math.max(16, Math.round((curr + delta) * 2) / 2));
+      const key   = unit.type === 'toshiba' ? 'temp' : 'stemp';
+      sendControl(unit, { [key]: unit.type === 'toshiba' ? next : next.toFixed(1) });
     });
   });
 

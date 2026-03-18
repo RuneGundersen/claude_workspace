@@ -18,4 +18,11 @@ const HP_UNITS = [
     ip:   '192.168.55.173',
     icon: '🏢',
   },
+  {
+    id:   'garage',
+    name: 'Garage',
+    icon: '🚗',
+    type: 'toshiba',                           // uses cloud API, not local HTTP
+    acId: 'f6b3f09f-9dee-4197-9920-82e7d1211275',
+  },
 ];

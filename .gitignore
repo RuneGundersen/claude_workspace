@@ -11,3 +11,6 @@ obj/
 __pycache__/
 *.pyc
 *.zip
+
+# Local secrets — never commit
+HeatPumps/toshiba_secrets.json

@@ -1,0 +1,2 @@
+# Required for Toshiba AC cloud control (AMQP via Azure IoT Hub)
+toshiba-ac
