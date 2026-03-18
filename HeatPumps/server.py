@@ -100,7 +100,7 @@ def _decode_state(raw_hex):
 def _encode_state(current_hex, changes):
     """Patch a Toshiba ACStateData hex string with changes dict."""
     data = bytearray(bytes.fromhex(current_hex))
-    POWER = {'off': 0x30, 'on': 0x31}
+    POWER = {'on': 0x30, 'off': 0x31}   # 0x30=ON, 0x31=OFF (matches _decode_state)
     MODE  = {'auto': 0x41, 'cool': 0x42, 'heat': 0x43, 'dry': 0x44, 'fan': 0x45}
     FAN   = {'quiet': 0x31, '1': 0x32, '2': 0x33, '3': 0x34,
              '4': 0x35,     '5': 0x36, 'auto': 0x41}
@@ -180,12 +180,13 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         try:
-            # Get current cloud state, apply changes optimistically, send via AMQP
+            # Get current cloud state, apply changes optimistically
             raw       = _toshiba_get_state(ac_id)
             new_hex   = _encode_state(raw['ACStateData'], changes)
             new_state = _decode_state(new_hex)
-            _toshiba_send(ac_id, changes)   # fire AMQP command
-            # Return optimistic state immediately — don't wait for cloud to update
+            # Fire AMQP command in background — return optimistic state immediately
+            t = threading.Thread(target=_toshiba_send, args=(ac_id, changes), daemon=True)
+            t.start()
             self._ok('application/json', json.dumps(new_state).encode())
         except Exception as e:
             self.send_error(502, str(e))

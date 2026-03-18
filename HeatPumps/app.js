@@ -310,8 +310,14 @@ function attachCardListeners(unit) {
 
   // Power toggle
   card.querySelector('.btn-power').addEventListener('click', () => {
-    const isOn = unitState[unit.ip]?.ctrl?.pow === '1';
-    sendControl(unit, { pow: isOn ? '0' : '1' });
+    const st = unitState[unit.id];
+    const isOn = unit.type === 'toshiba'
+      ? st?.toshiba?.power === 'on'
+      : st?.ctrl?.pow === '1';
+    const changes = unit.type === 'toshiba'
+      ? { power: isOn ? 'off' : 'on' }
+      : { pow:   isOn ? '0'   : '1'  };
+    sendControl(unit, changes);
   });
 
   // Mode
