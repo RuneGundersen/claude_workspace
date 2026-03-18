@@ -83,16 +83,18 @@ def _toshiba_get_state(ac_id):
 def _decode_state(raw_hex):
     """Decode Toshiba ACStateData hex string into readable dict."""
     data = bytes.fromhex(raw_hex)
-    POWER = {0x30: 'off', 0x31: 'on'}
+    # 0x30 = ON, 0x31 = OFF (confirmed: API OnOff field returns "30" when unit is on)
+    POWER = {0x30: 'on', 0x31: 'off'}
     MODE  = {0x41: 'auto', 0x42: 'cool', 0x43: 'heat', 0x44: 'dry', 0x45: 'fan'}
     FAN   = {0x31: 'quiet', 0x32: '1', 0x33: '2', 0x34: '3',
              0x35: '4',     0x36: '5',  0x41: 'auto'}
     return {
-        'power': POWER.get(data[0], 'unknown'),
-        'mode':  MODE.get(data[1],  'unknown'),
-        'temp':  data[2],           # direct Celsius value
-        'fan':   FAN.get(data[3],   'unknown'),
-        'raw':   raw_hex,
+        'power':    POWER.get(data[0], 'unknown'),
+        'mode':     MODE.get(data[1],  'unknown'),
+        'setpoint': data[2],      # target temperature (°C)
+        'roomTemp': data[8],      # actual room sensor reading (°C)
+        'fan':      FAN.get(data[3], 'unknown'),
+        'raw':      raw_hex,
     }
 
 def _encode_state(current_hex, changes):
@@ -106,8 +108,8 @@ def _encode_state(current_hex, changes):
         data[0] = POWER[changes['power']]
     if 'mode' in changes:
         data[1] = MODE[changes['mode']]
-    if 'temp' in changes:
-        data[2] = int(changes['temp'])
+    if 'setpoint' in changes:
+        data[2] = int(changes['setpoint'])
     if 'fan' in changes:
         data[3] = FAN[changes['fan']]
     return data.hex()

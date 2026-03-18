@@ -210,18 +210,17 @@ async function sendControl(unit, changes) {
 // --- Toshiba card ---
 
 function renderToshibaCard(unit, state) {
-  const card   = document.getElementById('card-' + unit.id);
-  const isOn   = state.power === 'on';
+  const card = document.getElementById('card-' + unit.id);
+  const isOn = state.power === 'on';
 
   card.classList.toggle('card--on',  isOn);
   card.classList.toggle('card--off', !isOn);
 
   card.querySelector('.btn-power').textContent = isOn ? '⏻ On' : '⏻ Off';
   card.querySelector('.btn-power').classList.toggle('active', isOn);
-  card.querySelector('.room-temp').textContent  = state.temp != null ? `${state.temp}°C` : '--';
+  card.querySelector('.room-temp').textContent    = state.roomTemp != null ? `${state.roomTemp}°C` : '--';
   card.querySelector('.outdoor-temp').textContent = '';
-
-  card.querySelector('.stemp-val').textContent = state.temp != null ? `${state.temp}°C` : '--';
+  card.querySelector('.stemp-val').textContent    = state.setpoint != null ? `${state.setpoint}°C` : '--';
 
   card.querySelectorAll('.btn-mode').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.mode === state.mode);
@@ -229,7 +228,7 @@ function renderToshibaCard(unit, state) {
   card.querySelectorAll('.btn-fan').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.fan === state.fan);
   });
-  card.querySelector('.fdir-val').textContent = '--';   // Toshiba swing not yet decoded
+  card.querySelector('.fdir-val').textContent = '--';
 }
 
 // --- Build cards ---
@@ -319,11 +318,11 @@ function attachCardListeners(unit) {
     btn.addEventListener('click', () => {
       const s = unitState[unit.id];
       const curr = unit.type === 'toshiba'
-        ? (s?.toshiba?.temp ?? 20)
+        ? (s?.toshiba?.setpoint ?? 20)
         : parseFloat(s?.ctrl?.stemp ?? '20');
       const delta = parseFloat(btn.dataset.adj);
       const next  = Math.min(30, Math.max(16, Math.round((curr + delta) * 2) / 2));
-      const key   = unit.type === 'toshiba' ? 'temp' : 'stemp';
+      const key   = unit.type === 'toshiba' ? 'setpoint' : 'stemp';
       sendControl(unit, { [key]: unit.type === 'toshiba' ? next : next.toFixed(1) });
     });
   });
