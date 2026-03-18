@@ -150,7 +150,7 @@ function forces(v_ms, p) {
   return { F_roll, F_aero, F_total, P_drive, Wh_km };
 }
 
-const speeds = Array.from({length: 160}, (_, i) => i + 1);  // 1–160 km/h
+const speeds = Array.from({length: 17}, (_, i) => i * 10);  // 0–160 km/h, steps of 10
 
 let forceChart, energyChart;
 
@@ -163,7 +163,7 @@ function buildCharts() {
     interaction: { mode: 'index', intersect: false },
     plugins: { legend: { labels: { color: '#e8eaf0', font: { size: 12 } } } },
     scales: {
-      x: { ticks: { color: '#6b7080', maxTicksLimit: 12 },
+      x: { ticks: { color: '#6b7080' },
            grid: { color: '#2a2d3a' },
            title: { display: true, text: xLabel, color: '#6b7080' } },
       y: { ticks: { color: '#6b7080' },
@@ -202,7 +202,7 @@ function updateAll() {
   const rollData  = speeds.map(() => Math.round(fRoll));
   const aeroData  = speeds.map(v => parseFloat((0.5 * rho * p.Cd * p.A * (v/3.6)**2).toFixed(1)));
   const totalData = speeds.map((v, i) => parseFloat((rollData[i] + aeroData[i]).toFixed(1)));
-  const energyData= speeds.map(v => parseFloat(forces(v/3.6, p).Wh_km.toFixed(1)));
+  const energyData= speeds.map(v => v === 0 ? null : parseFloat(forces(v/3.6, p).Wh_km.toFixed(1)));
 
   forceChart.data.datasets[0].data = rollData;
   forceChart.data.datasets[1].data = aeroData;
@@ -219,6 +219,7 @@ function updateAll() {
   // Optimal range speed: min of Wh_km curve
   let minE = Infinity, vOpt = 0;
   for (const v of speeds) {
+    if (v === 0) continue;
     const e = forces(v/3.6, p).Wh_km;
     if (e < minE) { minE = e; vOpt = v; }
   }
