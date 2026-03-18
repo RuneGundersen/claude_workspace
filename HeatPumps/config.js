@@ -19,6 +19,12 @@ const HP_UNITS = [
     icon: '🏢',
   },
   {
+    id:   'basement_l2',
+    name: 'Basement L2',
+    ip:   '192.168.55.189',
+    icon: '🏗',
+  },
+  {
     id:   'garage',
     name: 'Garage',
     icon: '🚗',
