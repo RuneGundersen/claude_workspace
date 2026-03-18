@@ -3,25 +3,25 @@ const HP_UNITS = [
   {
     id:   'floor1',
     name: 'Ground Floor',
-    ip:   '192.168.55.130',
+    ip:   '192.168.55.122',   // reserved .130, pending Zyxel DHCP access
     icon: '🏠',
   },
   {
     id:   'floor2',
     name: 'Second Floor',
-    ip:   '192.168.55.131',
+    ip:   '192.168.55.126',   // reserved .131, pending Zyxel DHCP access
     icon: '🛏',
   },
   {
     id:   'flat1',
     name: 'Flat 1',
-    ip:   '192.168.55.132',
+    ip:   '192.168.55.173',   // reserved .132, pending Zyxel DHCP access
     icon: '🏢',
   },
   {
     id:   'basement_l2',
     name: 'Basement L2',
-    ip:   '192.168.55.133',
+    ip:   '192.168.55.189',   // reserved .133, pending Zyxel DHCP access
     icon: '🏗',
   },
   {
