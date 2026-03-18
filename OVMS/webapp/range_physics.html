@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fiat 500e — Range Physics</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117; --surface: #1a1d27; --border: #2a2d3a;
+      --text: #e8eaf0; --muted: #6b7080;
+      --blue: #4a90d9; --green: #2ecc71; --orange: #e67e22;
+      --red: #e74c3c; --yellow: #f1c40f; --purple: #9b59b6;
+    }
+    body { background: var(--bg); color: var(--text);
+           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+           padding: 20px; max-width: 900px; margin: 0 auto; }
+    h1   { font-size: 1.2rem; font-weight: 600; margin-bottom: 4px; }
+    .sub { font-size: 0.8rem; color: var(--muted); margin-bottom: 24px; }
+    .card { background: var(--surface); border: 1px solid var(--border);
+            border-radius: 14px; padding: 20px; margin-bottom: 20px; }
+    .card h2 { font-size: 0.85rem; text-transform: uppercase;
+               letter-spacing: .05em; color: var(--muted); margin-bottom: 16px; }
+    canvas { width: 100% !important; }
+
+    .controls { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; }
+    .ctrl { display: flex; flex-direction: column; gap: 4px; }
+    .ctrl label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; }
+    .ctrl input[type=range] { accent-color: var(--blue); width: 160px; }
+    .ctrl .val { font-size: 0.85rem; font-weight: 600; color: var(--blue); }
+
+    .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: 12px; }
+    .stat { background: var(--bg); border-radius: 10px; padding: 12px; text-align: center; }
+    .stat .label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
+    .stat .value { font-size: 1.4rem; font-weight: 700; color: var(--blue); }
+    .stat .unit  { font-size: 0.75rem; color: var(--muted); }
+    .highlight   { border: 1px solid var(--green); }
+    .highlight .value { color: var(--green); }
+  </style>
+</head>
+<body>
+
+<h1>🚗 Fiat 500e — Range Physics</h1>
+<p class="sub">Lowered 50–60 mm · underbody panels · 2015 · Cd 0.291 (est.) · Crr 0.011</p>
+
+<div class="card">
+  <h2>Adjust parameters</h2>
+  <div class="controls">
+    <div class="ctrl">
+      <label>Cd (drag coeff)</label>
+      <input type="range" id="sCd" min="0.25" max="0.35" step="0.001" value="0.291">
+      <span class="val" id="vCd">0.291</span>
+    </div>
+    <div class="ctrl">
+      <label>Frontal area (m²)</label>
+      <input type="range" id="sA" min="1.9" max="2.3" step="0.01" value="2.10">
+      <span class="val" id="vA">2.10 m²</span>
+    </div>
+    <div class="ctrl">
+      <label>Crr (rolling coeff)</label>
+      <input type="range" id="sCr" min="0.007" max="0.018" step="0.001" value="0.011">
+      <span class="val" id="vCr">0.011</span>
+    </div>
+    <div class="ctrl">
+      <label>Mass incl. driver (kg)</label>
+      <input type="range" id="sM" min="1350" max="1700" step="10" value="1450">
+      <span class="val" id="vM">1450 kg</span>
+    </div>
+    <div class="ctrl">
+      <label>Accessories (W)</label>
+      <input type="range" id="sP" min="0" max="2000" step="50" value="300">
+      <span class="val" id="vP">300 W</span>
+    </div>
+    <div class="ctrl">
+      <label>Battery usable (kWh)</label>
+      <input type="range" id="sB" min="14" max="24" step="0.5" value="18">
+      <span class="val" id="vB">18.0 kWh</span>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Force vs Speed — where does each resistance dominate?</h2>
+  <canvas id="forceChart"></canvas>
+</div>
+
+<div class="card">
+  <h2>Energy consumption vs Speed (Wh/km)</h2>
+  <canvas id="energyChart"></canvas>
+</div>
+
+<div class="card">
+  <h2>Key numbers</h2>
+  <div class="stats">
+    <div class="stat">
+      <div class="label">Crossover speed</div>
+      <div class="value" id="sCross">--</div>
+      <div class="unit">km/h — aero = rolling</div>
+    </div>
+    <div class="stat highlight">
+      <div class="label">Optimal range speed</div>
+      <div class="value" id="sOpt">--</div>
+      <div class="unit">km/h (min Wh/km)</div>
+    </div>
+    <div class="stat">
+      <div class="label">Range at 80 km/h</div>
+      <div class="value" id="sR80">--</div>
+      <div class="unit">km</div>
+    </div>
+    <div class="stat">
+      <div class="label">Range at 110 km/h</div>
+      <div class="value" id="sR110">--</div>
+      <div class="unit">km</div>
+    </div>
+    <div class="stat">
+      <div class="label">Rolling force</div>
+      <div class="value" id="sFroll">--</div>
+      <div class="unit">N (constant)</div>
+    </div>
+    <div class="stat">
+      <div class="label">Aero force at 110</div>
+      <div class="value" id="sFaero110">--</div>
+      <div class="unit">N</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const g   = 9.81;
+const rho = 1.225;   // 15°C sea level
+
+function params() {
+  return {
+    Cd:   parseFloat(document.getElementById('sCd').value),
+    A:    parseFloat(document.getElementById('sA').value),
+    Cr:   parseFloat(document.getElementById('sCr').value),
+    mass: parseFloat(document.getElementById('sM').value),
+    Pacc: parseFloat(document.getElementById('sP').value),
+    batt: parseFloat(document.getElementById('sB').value) * 1000,  // Wh
+  };
+}
+
+function forces(v_ms, p) {
+  const F_roll  = p.Cr * p.mass * g;
+  const F_aero  = 0.5 * rho * p.Cd * p.A * v_ms * v_ms;
+  const F_total = F_roll + F_aero;
+  const P_drive = F_total * v_ms;
+  const Wh_km   = (P_drive + p.Pacc) / (v_ms * 3.6);   // Wh per km
+  return { F_roll, F_aero, F_total, P_drive, Wh_km };
+}
+
+const speeds = Array.from({length: 160}, (_, i) => i + 1);  // 1–160 km/h
+
+let forceChart, energyChart;
+
+function buildCharts() {
+  const fCtx = document.getElementById('forceChart').getContext('2d');
+  const eCtx = document.getElementById('energyChart').getContext('2d');
+
+  const opts = (yLabel, xLabel='Speed (km/h)') => ({
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: { legend: { labels: { color: '#e8eaf0', font: { size: 12 } } } },
+    scales: {
+      x: { ticks: { color: '#6b7080', maxTicksLimit: 12 },
+           grid: { color: '#2a2d3a' },
+           title: { display: true, text: xLabel, color: '#6b7080' } },
+      y: { ticks: { color: '#6b7080' },
+           grid: { color: '#2a2d3a' },
+           title: { display: true, text: yLabel, color: '#6b7080' } },
+    }
+  });
+
+  forceChart = new Chart(fCtx, {
+    type: 'line',
+    data: { labels: speeds, datasets: [
+      { label: 'Rolling resistance (N)', borderColor: '#2ecc71', backgroundColor: 'rgba(46,204,113,.1)',
+        data: [], pointRadius: 0, borderWidth: 2, fill: true },
+      { label: 'Aerodynamic drag (N)',   borderColor: '#e74c3c', backgroundColor: 'rgba(231,76,60,.1)',
+        data: [], pointRadius: 0, borderWidth: 2, fill: true },
+      { label: 'Total force (N)',        borderColor: '#4a90d9', backgroundColor: 'transparent',
+        data: [], pointRadius: 0, borderWidth: 2.5, borderDash: [6,3] },
+    ]},
+    options: opts('Force (N)'),
+  });
+
+  energyChart = new Chart(eCtx, {
+    type: 'line',
+    data: { labels: speeds, datasets: [
+      { label: 'Energy consumption (Wh/km)', borderColor: '#f1c40f', backgroundColor: 'rgba(241,196,15,.08)',
+        data: [], pointRadius: 0, borderWidth: 2.5, fill: true },
+    ]},
+    options: opts('Wh / km'),
+  });
+}
+
+function updateAll() {
+  const p = params();
+  const fRoll = p.Cr * p.mass * g;
+
+  const rollData  = speeds.map(() => Math.round(fRoll));
+  const aeroData  = speeds.map(v => parseFloat((0.5 * rho * p.Cd * p.A * (v/3.6)**2).toFixed(1)));
+  const totalData = speeds.map((v, i) => parseFloat((rollData[i] + aeroData[i]).toFixed(1)));
+  const energyData= speeds.map(v => parseFloat(forces(v/3.6, p).Wh_km.toFixed(1)));
+
+  forceChart.data.datasets[0].data = rollData;
+  forceChart.data.datasets[1].data = aeroData;
+  forceChart.data.datasets[2].data = totalData;
+  forceChart.update('none');
+
+  energyChart.data.datasets[0].data = energyData;
+  energyChart.update('none');
+
+  // Stats
+  // Crossover: F_aero = F_roll  →  v = sqrt(2*F_roll / (rho*Cd*A))
+  const vCross = Math.sqrt(2 * fRoll / (rho * p.Cd * p.A)) * 3.6;
+
+  // Optimal range speed: min of Wh_km curve
+  let minE = Infinity, vOpt = 0;
+  for (const v of speeds) {
+    const e = forces(v/3.6, p).Wh_km;
+    if (e < minE) { minE = e; vOpt = v; }
+  }
+
+  const wh80  = forces(80/3.6,  p).Wh_km;
+  const wh110 = forces(110/3.6, p).Wh_km;
+  const faero110 = 0.5 * rho * p.Cd * p.A * (110/3.6)**2;
+
+  document.getElementById('sCross').textContent    = vCross.toFixed(0);
+  document.getElementById('sOpt').textContent      = vOpt;
+  document.getElementById('sR80').textContent      = Math.round(p.batt / wh80);
+  document.getElementById('sR110').textContent     = Math.round(p.batt / wh110);
+  document.getElementById('sFroll').textContent    = Math.round(fRoll);
+  document.getElementById('sFaero110').textContent = Math.round(faero110);
+}
+
+function bindSlider(id, valId, fmt) {
+  document.getElementById(id).addEventListener('input', e => {
+    document.getElementById(valId).textContent = fmt(parseFloat(e.target.value));
+    updateAll();
+  });
+}
+
+buildCharts();
+bindSlider('sCd', 'vCd', v => v.toFixed(3));
+bindSlider('sA',  'vA',  v => v.toFixed(2) + ' m²');
+bindSlider('sCr', 'vCr', v => v.toFixed(3));
+bindSlider('sM',  'vM',  v => v.toFixed(0) + ' kg');
+bindSlider('sP',  'vP',  v => v.toFixed(0) + ' W');
+bindSlider('sB',  'vB',  v => v.toFixed(1) + ' kWh');
+updateAll();
+</script>
+</body>
+</html>
