@@ -185,7 +185,13 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             new_hex   = _encode_state(raw['ACStateData'], changes)
             new_state = _decode_state(new_hex)
             # Fire AMQP command in background — return optimistic state immediately
-            t = threading.Thread(target=_toshiba_send, args=(ac_id, changes), daemon=True)
+            def _bg(ac_id=ac_id, changes=changes):
+                try:
+                    _toshiba_send(ac_id, changes)
+                    print(f'[toshiba] set OK: {changes}', flush=True)
+                except Exception as e:
+                    print(f'[toshiba] set FAILED: {e}', flush=True)
+            t = threading.Thread(target=_bg, daemon=True)
             t.start()
             self._ok('application/json', json.dumps(new_state).encode())
         except Exception as e:
