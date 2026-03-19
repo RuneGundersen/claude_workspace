@@ -1,0 +1,17 @@
+[Unit]
+Description=Heat Pump Dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=rune
+WorkingDirectory=/home/rune/claude_workspace/HeatPumps
+ExecStart=/home/rune/claude_workspace/HeatPumps/venv/bin/python server.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -8,9 +8,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, fmt, *args):
         pass  # Suppress request logging
 
-print(f"OVMS Dashboard running at: http://localhost:{PORT}")
+import socket
+host = socket.gethostname()
+print(f"OVMS Dashboard running at: http://{host}:{PORT}")
 print("Press Ctrl+C to stop.\n")
-webbrowser.open(f"http://localhost:{PORT}")
+# Only open browser when running interactively on a desktop
+if os.environ.get('DISPLAY') or os.name == 'nt':
+    webbrowser.open(f"http://localhost:{PORT}")
 
 with socketserver.TCPServer(("", PORT), Handler) as httpd:
     httpd.serve_forever()
