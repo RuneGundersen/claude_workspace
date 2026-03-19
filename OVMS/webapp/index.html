@@ -583,6 +583,7 @@
   <div class="card">
     <div class="card-title">Connection</div>
     <button id="btnChangePassword" class="setup-btn setup-btn--outline">🔑 Change password</button>
+    <button id="btnChangePin" class="setup-btn setup-btn--outline">🔢 Change vehicle PIN</button>
   </div>
 
   <!-- Notification settings -->
@@ -733,11 +734,16 @@
       <span class="modal-title">🔐 Connect to OVMS</span>
     </div>
     <div class="modal-content">
-      <p class="setup-desc">Enter the MQTT password to connect to the car. It is stored only in your browser and never sent anywhere.</p>
+      <p class="setup-desc">Enter the MQTT password to connect to the car. Values are stored only in your browser and never sent anywhere.</p>
       <div class="setup-field">
         <label class="setup-label">Password</label>
         <input id="setupPassword" type="password" class="setup-input"
                placeholder="MQTT password" autocomplete="current-password" />
+      </div>
+      <div class="setup-field">
+        <label class="setup-label">Vehicle PIN (for lock/unlock)</label>
+        <input id="setupPin" type="password" class="setup-input"
+               placeholder="4-digit PIN" autocomplete="off" inputmode="numeric" maxlength="8" />
       </div>
       <div id="setupError" class="setup-error" style="display:none"></div>
       <button id="setupSave" class="setup-btn">Connect</button>

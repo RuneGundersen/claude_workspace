@@ -14,5 +14,5 @@ const OVMS_CONFIG = {
   vin:       '3C3CFFGE4FT741123',
   carName:   'Fiat 500e',
   carYear:   '2015',
-  vehiclePin: '8096',  // OVMS vehicle PIN for lock/unlock commands
+  vehiclePin: '',  // loaded from localStorage — set via the in-app setup screen
 };

@@ -13,36 +13,47 @@ let _lastCharging  = null;
 // --- Init ---
 // ── Credential helpers ─────────────────────────────────────────────────────
 const PASS_KEY = 'ovms_password';
+const PIN_KEY  = 'ovms_pin';
 
 function getSavedPassword() { return localStorage.getItem(PASS_KEY); }
 function savePassword(pw)   { localStorage.setItem(PASS_KEY, pw); }
 function clearPassword()    { localStorage.removeItem(PASS_KEY); }
 
+function getSavedPin() { return localStorage.getItem(PIN_KEY); }
+function savePin(pin)  { localStorage.setItem(PIN_KEY, pin); }
+function clearPin()    { localStorage.removeItem(PIN_KEY); }
+
 function showSetupModal(onSave) {
-  const modal = document.getElementById('setupModal');
-  const input = document.getElementById('setupPassword');
-  const btn   = document.getElementById('setupSave');
-  const err   = document.getElementById('setupError');
+  const modal    = document.getElementById('setupModal');
+  const pwInput  = document.getElementById('setupPassword');
+  const pinInput = document.getElementById('setupPin');
+  const btn      = document.getElementById('setupSave');
+  const err      = document.getElementById('setupError');
   if (!modal) return;
-  input.value = '';
+  pwInput.value  = '';
+  pinInput.value = getSavedPin() || '';
   err.style.display = 'none';
   modal.style.display = 'flex';
-  input.focus();
+  pwInput.focus();
 
   const save = () => {
-    const pw = input.value.trim();
+    const pw  = pwInput.value.trim();
+    const pin = pinInput.value.trim();
     if (!pw) { err.textContent = 'Please enter the password'; err.style.display = ''; return; }
     savePassword(pw);
+    if (pin) savePin(pin);
     modal.style.display = 'none';
     onSave(pw);
   };
   btn.onclick = save;
-  input.onkeydown = e => { if (e.key === 'Enter') save(); };
+  pwInput.onkeydown  = e => { if (e.key === 'Enter') save(); };
+  pinInput.onkeydown = e => { if (e.key === 'Enter') save(); };
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   const savedPw = getSavedPassword();
-  OVMS_CONFIG.password = savedPw || '';
+  OVMS_CONFIG.password   = savedPw || '';
+  OVMS_CONFIG.vehiclePin = getSavedPin() || '';
 
   ovms = new OVMSService(OVMS_CONFIG);
   window._ovms = ovms;
@@ -154,6 +165,15 @@ function setupEventHandlers() {
       setStatus('connecting');
       ovms.connect();
     });
+  });
+
+  // Change PIN button
+  document.getElementById('btnChangePin')?.addEventListener('click', () => {
+    const pin = window.prompt('Enter new vehicle PIN:', getSavedPin() || '');
+    if (pin === null) return;
+    savePin(pin.trim());
+    OVMS_CONFIG.vehiclePin = pin.trim();
+    showToast('PIN saved');
   });
 
   // Nav tabs
@@ -546,6 +566,19 @@ function setupCommandButtons() {
       document.querySelectorAll('.cmd-btn').forEach(b => b.disabled = true);
       btn.classList.add('loading');
       showCmdResponse('pending', `Sending: ${label}...`);
+
+      // If command needs PIN and none is saved, prompt for it
+      if (cmd.includes('{pin}') && !OVMS_CONFIG.vehiclePin) {
+        const pin = window.prompt('Enter vehicle PIN:');
+        if (!pin) {
+          document.querySelectorAll('.cmd-btn').forEach(b => b.disabled = false);
+          btn.classList.remove('loading');
+          showCmdResponse('error', 'PIN required');
+          return;
+        }
+        savePin(pin.trim());
+        OVMS_CONFIG.vehiclePin = pin.trim();
+      }
 
       try {
         const resolvedCmd = cmd.replace('{pin}', OVMS_CONFIG.vehiclePin);
