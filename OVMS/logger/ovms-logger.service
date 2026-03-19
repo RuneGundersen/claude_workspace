@@ -1,0 +1,17 @@
+[Unit]
+Description=OVMS MQTT Logger
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=rune
+WorkingDirectory=/home/rune/claude_workspace/OVMS/logger
+ExecStart=/usr/bin/python3 ovms_logger.py
+Restart=always
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
