@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="theme-color" content="#1a1a2e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <title>Fiat 500e – OVMS</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="header-left">
+    <span class="car-icon-big">🚗</span>
+    <div>
+      <div id="carName" class="car-name">Fiat 500e</div>
+      <div id="carYear" class="car-year">2015</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span id="recBadge" class="rec-badge" style="display:none">● REC</span>
+    <div class="status-pill">
+      <span id="statusDot" class="status-dot offline"></span>
+      <span id="statusText">Connecting...</span>
+    </div>
+    <button id="btnReconnect" class="icon-btn" title="Reconnect">↺</button>
+  </div>
+</header>
+
+<!-- Nav tabs -->
+<nav class="nav-bar">
+  <button class="nav-tab active" data-tab="battery">🔋 Battery</button>
+  <button class="nav-tab" data-tab="charging">⚡ Charging</button>
+  <button class="nav-tab" data-tab="vehicle">🚘 Vehicle</button>
+  <button class="nav-tab" data-tab="map">🗺 Map</button>
+  <button class="nav-tab" data-tab="history">📊 History</button>
+  <button class="nav-tab" data-tab="control">🎮 Control</button>
+  <button class="nav-tab" data-tab="diag">🔧 Diagnostics</button>
+  <button class="nav-tab" data-tab="shell">💻 Shell</button>
+  <a class="nav-tab" href="range_physics.html">📐 Physics</a>
+</nav>
+
+<!-- Battery Panel -->
+<div id="panel-battery" class="tab-panel active">
+
+  <!-- SOC Hero -->
+  <div class="card soc-card">
+    <div class="soc-label">Battery Level</div>
+    <div id="socValue" class="soc-value">--%</div>
+    <div class="soc-bar-bg">
+      <div id="socBar" class="soc-fill green" style="width:0%"></div>
+    </div>
+    <div class="soc-range-row">
+      <div class="soc-range-item">
+        <span class="soc-range-label">Est. range</span>
+        <span id="rangeValue" class="range-val">--</span>
+        <span class="range-unit">km</span>
+      </div>
+      <div class="soc-range-item">
+        <span class="soc-range-label">At full charge</span>
+        <span id="rangeFull" class="range-val">--</span>
+        <span class="range-unit">km</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Electrical -->
+  <div class="card">
+    <div class="card-title">Electrical</div>
+    <div class="stat-grid">
+      <div class="stat-item">
+        <span class="stat-label">Voltage</span>
+        <span id="battVoltage" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Current</span>
+        <span id="battCurrent" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Power</span>
+        <span id="battPower" class="stat-val">--</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Health & Capacity -->
+  <div class="card">
+    <div class="card-title">Health &amp; Capacity</div>
+    <div class="stat-grid">
+      <div class="stat-item">
+        <span class="stat-label">Health (SOH)</span>
+        <span id="battHealth" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Calc. capacity</span>
+        <span id="battCac" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Nominal cap.</span>
+        <span id="battCapacity" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Cycles</span>
+        <span id="battCycles" class="stat-val">--</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Temperature -->
+  <div class="card">
+    <div class="card-title">Temperature</div>
+    <div class="stat-grid">
+      <div class="stat-item">
+        <span class="stat-label">Battery</span>
+        <span id="battTemp" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Min cell</span>
+        <span id="battTempMin" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Max cell</span>
+        <span id="battTempMax" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Motor temp.</span>
+        <span id="motorTemp" class="stat-val">--</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Energy Statistics -->
+  <div class="card">
+    <div class="card-title">Energy Statistics</div>
+    <div class="stat-grid">
+      <div class="stat-item stat-item--accent-red">
+        <span class="stat-label">Energy used</span>
+        <span id="battEnergyUsed" class="stat-val">--</span>
+      </div>
+      <div class="stat-item stat-item--accent-green">
+        <span class="stat-label">Recovered</span>
+        <span id="battEnergyRecd" class="stat-val">--</span>
+      </div>
+      <div class="stat-item stat-item--accent-red">
+        <span class="stat-label">Discharged (Ah)</span>
+        <span id="battCoulombUsed" class="stat-val">--</span>
+      </div>
+      <div class="stat-item stat-item--accent-green">
+        <span class="stat-label">Recovered (Ah)</span>
+        <span id="battCoulombRecd" class="stat-val">--</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 12V Auxiliary Battery -->
+  <div class="card">
+    <div class="card-title">12V Auxiliary Battery</div>
+    <div class="stat-grid">
+      <div class="stat-item">
+        <span class="stat-label">Voltage</span>
+        <span id="batt12vVoltage" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Current</span>
+        <span id="batt12vCurrent" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">State</span>
+        <span id="batt12vState" class="stat-val">--</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cell Voltage Heatmap -->
+  <div class="card">
+    <div class="card-title">Cell Voltages (96 cells)</div>
+
+    <!-- No-data state -->
+    <div id="cellNoData" class="cell-nodata">
+      No cell data available.<br>
+      <span style="font-size:12px">Requires custom firmware with BPCM UDS-polling.<br>See <code>OVMS/firmware/README_CELLS.md</code> for setup.</span>
+    </div>
+
+    <!-- Stats -->
+    <div id="cellStats" class="cell-stats" style="display:none"></div>
+
+    <!-- Heatmap grid (12 × 8 = 96 cells, built by cells.js) -->
+    <div id="cellGrid" class="cell-heatmap" style="display:none"></div>
+
+    <!-- Legend -->
+    <div class="cell-legend">
+      <span class="cell-legend-item"><i class="cell-v-ok"></i> &lt;10 mV</span>
+      <span class="cell-legend-item"><i class="cell-v-warn-lo"></i> 10–25 mV</span>
+      <span class="cell-legend-item"><i class="cell-v-warn"></i> 25–50 mV</span>
+      <span class="cell-legend-item"><i class="cell-v-low"></i> 50–100 mV</span>
+      <span class="cell-legend-item"><i class="cell-v-crit"></i> &gt;100 mV</span>
+      <span class="cell-legend-item"><i class="cell-v-none"></i> No data</span>
+    </div>
+
+    <div id="cellTimestamp" class="cell-timestamp"></div>
+  </div>
+
+</div>
+
+<!-- Charging Panel -->
+<div id="panel-charging" class="tab-panel">
+  <div class="card">
+    <div class="card-title">Charging Status</div>
+    <div style="margin-bottom:12px">
+      <span id="chargeBadge" class="charge-badge idle">--</span>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-item">
+        <span class="stat-label">Power</span>
+        <span id="chgPower" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Voltage</span>
+        <span id="chgVoltage" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Current</span>
+        <span id="chgCurrent" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Type</span>
+        <span id="chgType" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Duration</span>
+        <span id="chgDuration" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Efficiency</span>
+        <span id="chgEfficiency" class="stat-val">--</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Vehicle Panel -->
+<div id="panel-vehicle" class="tab-panel">
+
+  <!-- Driving Overview -->
+  <div class="card drive-card">
+    <div class="drive-grid">
+      <div class="drive-item">
+        <span class="drive-label">Battery Level</span>
+        <span id="dvSOC" class="drive-val">--%</span>
+      </div>
+      <div class="drive-item">
+        <span class="drive-label">Est. range</span>
+        <span id="dvRange" class="drive-val">-- <small>km</small></span>
+      </div>
+      <div class="drive-item">
+        <span class="drive-label">Speed</span>
+        <span id="dvSpeed" class="drive-val">-- <small>km/h</small></span>
+      </div>
+      <div class="drive-item">
+        <span class="drive-label">Consumption</span>
+        <span id="dvConsumption" class="drive-val">--</span>
+        <span class="drive-sublabel">kWh/100km</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TPMS -->
+  <div class="card">
+    <div class="card-title">Tyre Pressure</div>
+    <div class="tpms-layout">
+      <div class="tpms-row">
+        <div class="tpms-tire" id="tpmsFL">
+          <span class="tpms-pos">FL</span>
+          <span class="tpms-val" id="tpmsFLval">--</span>
+          <span class="tpms-unit">kPa</span>
+        </div>
+        <div class="tpms-axle-lbl">Front</div>
+        <div class="tpms-tire" id="tpmsFR">
+          <span class="tpms-pos">FR</span>
+          <span class="tpms-val" id="tpmsFRval">--</span>
+          <span class="tpms-unit">kPa</span>
+        </div>
+      </div>
+      <div class="tpms-car-body">🚗</div>
+      <div class="tpms-row">
+        <div class="tpms-tire" id="tpmsRL">
+          <span class="tpms-pos">RL</span>
+          <span class="tpms-val" id="tpmsRLval">--</span>
+          <span class="tpms-unit">kPa</span>
+        </div>
+        <div class="tpms-axle-lbl">Rear</div>
+        <div class="tpms-tire" id="tpmsRR">
+          <span class="tpms-pos">RR</span>
+          <span class="tpms-val" id="tpmsRRval">--</span>
+          <span class="tpms-unit">kPa</span>
+        </div>
+      </div>
+    </div>
+    <div id="tpmsAlert" class="tpms-alert" style="display:none"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Status</div>
+    <div class="badge-row">
+      <span id="vLocked" class="badge">--</span>
+      <span id="vOn" class="badge">--</span>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-item">
+        <span class="stat-label">Speed</span>
+        <span id="vSpeed" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Odometer</span>
+        <span id="vOdo" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Gear</span>
+        <span id="vGear" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Cabin temp</span>
+        <span id="vCabin" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Ambient temp</span>
+        <span id="vAmbient" class="stat-val">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">12V battery</span>
+        <span id="v12v" class="stat-val">--</span>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Vehicle Info</div>
+    <div class="info-row"><span>VIN</span><span id="vin" class="mono">--</span></div>
+  </div>
+
+  <!-- Drag forces — shown only while driving -->
+  <div id="dragCard" class="card" style="display:none">
+    <div class="card-title">Driving Resistance</div>
+
+    <!-- Summary row (2×2 grid) -->
+    <div class="drag-summary">
+      <div class="drag-summary-item">
+        <span class="drag-summary-lbl">Speed</span>
+        <span id="dragSpeed" class="drag-summary-val">--</span>
+      </div>
+      <div class="drag-summary-item">
+        <span class="drag-summary-lbl">Grade</span>
+        <span id="dragGradePct" class="drag-summary-val">--</span>
+      </div>
+      <div class="drag-summary-item">
+        <span class="drag-summary-lbl">Power (resistance)</span>
+        <span id="dragPower" class="drag-summary-val drag-summary-power">--</span>
+      </div>
+      <div class="drag-summary-item">
+        <span class="drag-summary-lbl">Altitude (GPS)</span>
+        <span id="dragAlt" class="drag-summary-val">--</span>
+      </div>
+    </div>
+
+    <!-- Force bars -->
+    <div class="drag-bars">
+
+      <div id="dragAero" class="drag-row">
+        <div class="drag-label">
+          <span class="drag-name">Aerodynamic drag</span>
+          <span id="dragAeroFrac" class="drag-frac">--%</span>
+        </div>
+        <div class="drag-bar-bg">
+          <div class="drag-bar-fill drag-bar-aero" style="width:0%"></div>
+        </div>
+        <span class="drag-val">-- N</span>
+      </div>
+
+      <div id="dragRoll" class="drag-row">
+        <div class="drag-label">
+          <span class="drag-name">Rolling resistance</span>
+          <span id="dragRollFrac" class="drag-frac">--%</span>
+        </div>
+        <div class="drag-bar-bg">
+          <div class="drag-bar-fill drag-bar-roll" style="width:0%"></div>
+        </div>
+        <span class="drag-val">-- N</span>
+      </div>
+
+      <!-- Grade row — hidden until GPS altitude is available -->
+      <div id="dragGradeRow" style="display:none">
+        <div id="dragGrade" class="drag-row">
+          <div class="drag-label">
+            <span class="drag-name">Grade resistance</span>
+            <span class="drag-frac"></span>
+          </div>
+          <div class="drag-bar-bg">
+            <div class="drag-bar-fill drag-bar-grade-up" style="width:0%"></div>
+          </div>
+          <span class="drag-val">-- N</span>
+        </div>
+      </div>
+
+      <div id="dragTotal" class="drag-row drag-row--total">
+        <div class="drag-label">
+          <span class="drag-name">Total resistance</span>
+          <span class="drag-frac"></span>
+        </div>
+        <div class="drag-bar-bg">
+          <div class="drag-bar-fill drag-bar-total" style="width:0%"></div>
+        </div>
+        <span class="drag-val drag-total-color">-- N</span>
+      </div>
+
+    </div>
+
+    <!-- Constants footnote -->
+    <div id="dragNote" class="drag-note">
+      Model: Cd 0.311 · A 2.13 m² · Cr 0.011 · m 1450 kg · no wind
+    </div>
+  </div>
+
+</div>
+
+<!-- Map Panel -->
+<div id="panel-map" class="tab-panel">
+  <div class="card map-card">
+    <div class="card-title">Position</div>
+    <div id="gpsCoords" class="gps-coords">Fetching position...</div>
+    <div id="mapContainer"></div>
+  </div>
+</div>
+
+<!-- History Panel -->
+<div id="panel-history" class="tab-panel">
+  <div class="subtab-bar">
+    <button class="subtab active" data-subtab="trips">🚗 Trips</button>
+    <button class="subtab" data-subtab="charges">⚡ Charges</button>
+    <button class="subtab" data-subtab="stats">📈 Statistics</button>
+  </div>
+  <div id="subtab-trips" class="subtab-panel">
+    <div id="tripsList" class="history-list"></div>
+  </div>
+  <div id="subtab-charges" class="subtab-panel" style="display:none">
+    <div id="chargesList" class="history-list"></div>
+  </div>
+  <div id="subtab-stats" class="subtab-panel" style="display:none">
+
+    <!-- Summary -->
+    <div class="card">
+      <div class="card-title">Summary</div>
+      <div class="stat-grid">
+        <div class="stat-item"><span class="stat-label">Total driven</span><span id="statTotalKm" class="stat-val">--</span></div>
+        <div class="stat-item"><span class="stat-label">Avg. range</span><span id="statAvgRange" class="stat-val">--</span></div>
+        <div class="stat-item"><span class="stat-label">Total charged</span><span id="statTotalChg" class="stat-val">--</span></div>
+        <div class="stat-item"><span class="stat-label">Avg. per charge</span><span id="statAvgChg" class="stat-val">--</span></div>
+        <div class="stat-item"><span class="stat-label">No. of trips</span><span id="statTrips" class="stat-val">--</span></div>
+        <div class="stat-item"><span class="stat-label">No. of charges</span><span id="statCharges" class="stat-val">--</span></div>
+      </div>
+    </div>
+
+    <!-- Trip chart -->
+    <div class="card">
+      <div class="card-title">Trips — distance and consumption</div>
+      <div id="chartTripsWrap" class="chart-wrap">
+        <canvas id="chartTrips"></canvas>
+      </div>
+    </div>
+
+    <!-- Charge chart -->
+    <div class="card">
+      <div class="card-title">Charge sessions — energy and end SOC</div>
+      <div id="chartChargesWrap" class="chart-wrap">
+        <canvas id="chartCharges"></canvas>
+      </div>
+    </div>
+
+    <!-- SOC trend -->
+    <div class="card">
+      <div class="card-title">SOC trend over trips</div>
+      <div id="chartSocWrap" class="chart-wrap">
+        <canvas id="chartSocTrend"></canvas>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Control Panel -->
+<div id="panel-control" class="tab-panel">
+
+  <!-- Response banner -->
+  <div id="cmdResponse" class="cmd-response" style="display:none"></div>
+
+  <!-- Climate -->
+  <div class="card">
+    <div class="card-title">Climate</div>
+    <div class="cmd-grid">
+      <button class="cmd-btn" data-cmd="climate on" data-label="Pre-heat on"
+              data-confirm="Start pre-heating the car?">
+        <span class="cmd-icon">🔥</span>
+        <span class="cmd-label">Pre-heat on</span>
+      </button>
+      <button class="cmd-btn" data-cmd="climate off" data-label="Climate off"
+              data-confirm="Turn off climate control?">
+        <span class="cmd-icon">❄️</span>
+        <span class="cmd-label">Climate off</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Doors -->
+  <div class="card">
+    <div class="card-title">Doors</div>
+    <div class="cmd-grid">
+      <button class="cmd-btn cmd-btn--safe" data-cmd="lock {pin}" data-label="Lock"
+              data-confirm="Lock the car?">
+        <span class="cmd-icon">🔒</span>
+        <span class="cmd-label">Lock</span>
+      </button>
+      <button class="cmd-btn cmd-btn--warn" data-cmd="unlock {pin}" data-label="Unlock"
+              data-confirm="Unlock the car?">
+        <span class="cmd-icon">🔓</span>
+        <span class="cmd-label">Unlock</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Charging -->
+  <div class="card">
+    <div class="card-title">Charging</div>
+    <div class="cmd-grid">
+      <button class="cmd-btn cmd-btn--safe" data-cmd="charge start" data-label="Start charging"
+              data-confirm="Start charging?">
+        <span class="cmd-icon">⚡</span>
+        <span class="cmd-label">Start charging</span>
+      </button>
+      <button class="cmd-btn cmd-btn--warn" data-cmd="charge stop" data-label="Stop charging"
+              data-confirm="Stop charging?">
+        <span class="cmd-icon">⏹</span>
+        <span class="cmd-label">Stop charging</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Other -->
+  <div class="card">
+    <div class="card-title">Other</div>
+    <div class="cmd-grid">
+      <button class="cmd-btn" data-cmd="wakeup" data-label="Wake car"
+              data-confirm="Send wake signal to car?">
+        <span class="cmd-icon">💡</span>
+        <span class="cmd-label">Wake car</span>
+      </button>
+      <button class="cmd-btn" data-cmd="stat" data-label="Get status">
+        <span class="cmd-icon">📋</span>
+        <span class="cmd-label">Get status</span>
+      </button>
+      <button class="cmd-btn" data-cmd="homelink 1" data-label="Homelink 1"
+              data-confirm="Send Homelink 1?">
+        <span class="cmd-icon">📡</span>
+        <span class="cmd-label">Homelink 1</span>
+      </button>
+      <button class="cmd-btn" data-cmd="homelink 2" data-label="Homelink 2"
+              data-confirm="Send Homelink 2?">
+        <span class="cmd-icon">📡</span>
+        <span class="cmd-label">Homelink 2</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Command log -->
+  <div class="card">
+    <div class="card-title">Command Log</div>
+    <div id="cmdLog" class="cmd-log"></div>
+  </div>
+
+  <!-- Connection settings -->
+  <div class="card">
+    <div class="card-title">Connection</div>
+    <button id="btnChangePassword" class="setup-btn setup-btn--outline">🔑 Change password</button>
+    <button id="btnChangePin" class="setup-btn setup-btn--outline">🔢 Change vehicle PIN</button>
+  </div>
+
+  <!-- Notification settings -->
+  <div class="card">
+    <div class="card-title">Notifications</div>
+    <div id="notifPermRow" class="notif-perm-row">
+      <span id="notifStatus" class="notif-status">Notifications not enabled</span>
+      <button id="btnEnableNotif" class="btn-notif">🔔 Enable notifications</button>
+    </div>
+    <div id="notifRules" class="notif-rules" style="display:none">
+      <label class="notif-rule">
+        <input type="checkbox" id="ruleChargeStart" checked>
+        <span>⚡ Charging started</span>
+      </label>
+      <label class="notif-rule">
+        <input type="checkbox" id="ruleChargeDone" checked>
+        <span>✅ Charging complete</span>
+        <span class="notif-threshold">at &ge; <input type="number" id="threshChargeDone" value="80" min="50" max="100" class="notif-input">%</span>
+      </label>
+      <label class="notif-rule">
+        <input type="checkbox" id="ruleSocLow" checked>
+        <span>🔋 Low battery</span>
+        <span class="notif-threshold">below <input type="number" id="threshSocLow" value="20" min="5" max="50" class="notif-input">%</span>
+      </label>
+      <label class="notif-rule">
+        <input type="checkbox" id="ruleSocCritical" checked>
+        <span>🚨 Critical battery</span>
+        <span class="notif-threshold">below <input type="number" id="threshSocCritical" value="10" min="5" max="20" class="notif-input">%</span>
+      </label>
+      <label class="notif-rule">
+        <input type="checkbox" id="ruleBattTempHigh">
+        <span>🌡️ High battery temperature</span>
+        <span class="notif-threshold">above <input type="number" id="threshBattTempHigh" value="42" min="30" max="60" class="notif-input">°C</span>
+      </label>
+      <label class="notif-rule">
+        <input type="checkbox" id="ruleCarUnlocked">
+        <span>🔓 Car unlocked</span>
+      </label>
+      <button id="btnSaveNotif" class="btn-notif-save">Save settings</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Diagnostics Panel -->
+<div id="panel-diag" class="tab-panel">
+
+  <!-- Status banner -->
+  <div id="diagStatus" class="diag-status" style="display:none"></div>
+
+  <!-- Stored DTCs -->
+  <div class="card">
+    <div class="card-title">Stored Fault Codes (Mode 03)</div>
+    <div class="diag-btn-row">
+      <button id="btnReadDTC" class="cmd-btn">
+        <span class="cmd-icon">🔍</span>
+        <span class="cmd-label">Read fault codes</span>
+      </button>
+      <button id="btnReadPending" class="cmd-btn">
+        <span class="cmd-icon">🕐</span>
+        <span class="cmd-label">Pending faults</span>
+      </button>
+    </div>
+    <div id="diagLastScan" class="diag-timestamp"></div>
+    <div id="dtcStoredList" class="dtc-list">
+      <div class="dtc-empty">Press «Read fault codes» to scan</div>
+    </div>
+  </div>
+
+  <!-- Pending DTCs -->
+  <div class="card">
+    <div class="card-title">Pending Fault Codes (Mode 07)</div>
+    <div id="dtcPendingList" class="dtc-list">
+      <div class="dtc-empty">Press «Pending faults» to scan</div>
+    </div>
+  </div>
+
+  <!-- Clear DTCs -->
+  <div class="card">
+    <div class="card-title">Clear Fault Codes</div>
+    <p class="diag-warn-text">⚠️ Clears all stored and pending fault codes from all ECUs. Only do this after noting the codes.</p>
+    <button id="btnClearDTC" class="cmd-btn cmd-btn--warn" style="width:100%">
+      <span class="cmd-icon">🗑️</span>
+      <span class="cmd-label">Clear all fault codes (Mode 04)</span>
+    </button>
+  </div>
+
+  <!-- OVMS Alerts -->
+  <div class="card">
+    <div class="card-title">OVMS Alerts</div>
+    <div id="diagOvmsAlerts" class="dtc-list">
+      <div class="dtc-empty">No active alerts</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Shell Panel -->
+<div id="panel-shell" class="tab-panel">
+  <div class="card" style="padding:0;overflow:hidden">
+    <div id="shellOutput" style="
+      font-family: monospace;
+      font-size: 13px;
+      background: #0a0a0a;
+      color: #d4d4d4;
+      height: 55vh;
+      overflow-y: auto;
+      padding: 12px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    "></div>
+    <div style="display:flex;gap:8px;padding:10px;background:#111;border-top:1px solid #222">
+      <input id="shellInput" type="text" placeholder="Enter command…" autocomplete="off" autocorrect="off"
+        spellcheck="false" style="
+          flex:1;background:#1a1a1a;color:#fff;border:1px solid #333;
+          border-radius:6px;padding:8px 12px;font-family:monospace;font-size:13px;
+        ">
+      <button id="shellSend" style="
+        background:#4a90d9;color:#fff;border:none;border-radius:6px;
+        padding:8px 16px;font-size:13px;cursor:pointer;
+      ">Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- History detail modal -->
+<div id="historyModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span id="modalTitle" class="modal-title"></span>
+      <button id="modalClose" class="icon-btn">✕</button>
+    </div>
+    <div id="modalContent" class="modal-content"></div>
+  </div>
+</div>
+
+<!-- Debug panel -->
+<div style="margin:12px;background:#111;border:1px solid #333;border-radius:10px;padding:12px;">
+  <div style="font-size:11px;color:#888;margin-bottom:6px;">🔧 Connection log</div>
+  <div style="font-size:11px;color:#aaa;">Broker: <span id="brokerUrl" style="color:#4a90d9"></span></div>
+  <textarea id="debugLog" readonly style="width:100%;height:80px;background:#000;color:#0f0;font-family:monospace;font-size:10px;border:none;margin-top:8px;resize:none;border-radius:6px;padding:6px;"></textarea>
+</div>
+
+<!-- Setup modal (shown on first run or when password missing) -->
+<div id="setupModal" class="modal-overlay" style="display:none">
+  <div class="modal-box setup-box">
+    <div class="modal-header">
+      <span class="modal-title">🔐 Connect to OVMS</span>
+    </div>
+    <div class="modal-content">
+      <p class="setup-desc">Enter the MQTT password to connect to the car. Values are stored only in your browser and never sent anywhere.</p>
+      <div class="setup-field">
+        <label class="setup-label">Password</label>
+        <input id="setupPassword" type="password" class="setup-input"
+               placeholder="MQTT password" autocomplete="current-password" />
+      </div>
+      <div class="setup-field">
+        <label class="setup-label">Vehicle PIN (for lock/unlock)</label>
+        <input id="setupPin" type="password" class="setup-input"
+               placeholder="4-digit PIN" autocomplete="off" inputmode="numeric" maxlength="8" />
+      </div>
+      <div id="setupError" class="setup-error" style="display:none"></div>
+      <button id="setupSave" class="setup-btn">Connect</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast notification -->
+<div id="toast" class="toast"></div>
+
+<!-- Scripts -->
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="config.js"></script>
+<script src="ovms.js"></script>
+<script src="logger.js"></script>
+<script src="history.js"></script>
+<script src="notifications.js"></script>
+<script src="charts.js"></script>
+<script src="diagnostics.js"></script>
+<script src="cells.js"></script>
+<script src="physics.js"></script>
+<script src="shell.js"></script>
+<script src="app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(e => console.warn('SW:', e));
+  }
+</script>
+</body>
+</html>

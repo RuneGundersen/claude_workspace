@@ -1,0 +1,30 @@
+{
+  "name": "Fiat 500e – OVMS Dashboard",
+  "short_name": "500e",
+  "description": "Live batteri, kjøretøystatus og fjernkontroll for Fiat 500e via OVMS",
+  "start_url": "/claude_workspace/OVMS/webapp/index.html",
+  "scope": "/claude_workspace/OVMS/webapp/",
+  "display": "standalone",
+  "background_color": "#0f0f1a",
+  "theme_color": "#1a1a2e",
+  "orientation": "portrait-primary",
+  "lang": "no",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Batteri",
+      "short_name": "Batteri",
+      "url": "./index.html#battery",
+      "icons": [{ "src": "icons/icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Kontroll",
+      "short_name": "Kontroll",
+      "url": "./index.html#control",
+      "icons": [{ "src": "icons/icon.svg", "sizes": "any" }]
+    }
+  ],
+  "categories": ["utilities", "automotive"]
+}

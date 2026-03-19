@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="90" fill="#1a1a2e"/>
+
+  <!-- === Fiat 500e body — blå med sorte fartsstriper === -->
+
+  <!-- Car body (blå) -->
+  <path d="M52,308 L52,272 Q54,258 82,252
+           Q108,208 158,186 Q208,166 260,166
+           Q315,166 358,186 Q408,210 432,252
+           L460,258 L460,308 Z" fill="#1e6fd4"/>
+
+  <!-- Rounded roof (Fiat 500 boble-form) -->
+  <path d="M146,252 Q158,192 200,176
+           Q230,165 260,165
+           Q292,165 324,176
+           Q366,192 376,252 Z" fill="#1e6fd4"/>
+
+  <!-- Hjul-buene (utskjæringer) -->
+  <ellipse cx="148" cy="308" rx="62" ry="22" fill="#1a1a2e"/>
+  <ellipse cx="372" cy="308" rx="62" ry="22" fill="#1a1a2e"/>
+
+  <!-- Sorte fartsstriper (to parallelle striper langs siden) -->
+  <clipPath id="bodyMask">
+    <path d="M52,308 L52,272 Q54,258 82,252 L460,258 L460,308 Z"/>
+  </clipPath>
+  <rect x="52" y="270" width="408" height="15" fill="#111" clip-path="url(#bodyMask)"/>
+  <rect x="52" y="291" width="408" height="9"  fill="#222" clip-path="url(#bodyMask)"/>
+
+  <!-- Frontrute -->
+  <path d="M162,249 Q174,202 210,184 L236,184 L236,249 Z"
+        fill="#0a1628" opacity=".88"/>
+
+  <!-- Sidevindu -->
+  <path d="M246,184 L292,184 Q318,198 328,249 L246,249 Z"
+        fill="#0a1628" opacity=".88"/>
+
+  <!-- B-stolpe -->
+  <rect x="239" y="184" width="5" height="65" fill="#0d2a60"/>
+
+  <!-- Dørfuge -->
+  <line x1="240" y1="249" x2="240" y2="308" stroke="#0d2a60" stroke-width="2"/>
+
+  <!-- Hjul (bakre) -->
+  <circle cx="148" cy="342" r="46" fill="#111"/>
+  <circle cx="148" cy="342" r="31" fill="#252535"/>
+  <circle cx="148" cy="342" r="10" fill="#3a3a4e"/>
+  <circle cx="148" cy="330" r="4"  fill="#555"/>
+  <circle cx="148" cy="354" r="4"  fill="#555"/>
+  <circle cx="136" cy="342" r="4"  fill="#555"/>
+  <circle cx="160" cy="342" r="4"  fill="#555"/>
+
+  <!-- Hjul (fremre) -->
+  <circle cx="372" cy="342" r="46" fill="#111"/>
+  <circle cx="372" cy="342" r="31" fill="#252535"/>
+  <circle cx="372" cy="342" r="10" fill="#3a3a4e"/>
+  <circle cx="372" cy="330" r="4"  fill="#555"/>
+  <circle cx="372" cy="354" r="4"  fill="#555"/>
+  <circle cx="360" cy="342" r="4"  fill="#555"/>
+  <circle cx="384" cy="342" r="4"  fill="#555"/>
+
+  <!-- Frontlys (gul) -->
+  <rect x="446" y="258" width="16" height="11" rx="4" fill="#ffe066" opacity=".9"/>
+
+  <!-- Baklys (rød) -->
+  <rect x="52"  y="258" width="14" height="11" rx="4" fill="#e74c3c" opacity=".9"/>
+
+  <!-- Ladeport (liten detalj front) -->
+  <rect x="435" y="276" width="10" height="7" rx="2" fill="#4a90d9" opacity=".8"/>
+
+  <!-- Gul lyn-bolt (elektrisk) -->
+  <path d="M318,52 L294,112 L322,112 L294,178 L368,96 L336,96 L358,52 Z"
+        fill="#f1c40f"/>
+</svg>
