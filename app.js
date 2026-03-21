@@ -4,6 +4,7 @@ let ovms;
 window._ovms = null;   // exposed for diagnostics.js
 let map = null;
 let marker = null;
+let _mapFollow = true;  // re-enabled after manual pan
 let updateInterval = null;
 let logger  = null;
 let alerts  = null;
@@ -442,7 +443,7 @@ function updateEnvironment() {
     if (map && marker) {
       const ll = [parseFloat(lat), parseFloat(lon)];
       marker.setLatLng(ll);
-      map.setView(ll, map.getZoom());
+      if (_mapFollow) map.panTo(ll);
     }
   }
 }
@@ -461,6 +462,16 @@ function initMap() {
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors'
   }).addTo(map);
+
+  // Stop following when user pans manually
+  map.on('dragstart', () => { _mapFollow = false; });
+
+  document.getElementById('btnCenterMap')?.addEventListener('click', () => {
+    _mapFollow = true;
+    const clat = ovms.get('v.p.latitude');
+    const clon = ovms.get('v.p.longitude');
+    if (clat && clon) map.panTo([parseFloat(clat), parseFloat(clon)]);
+  });
 
   const icon = L.divIcon({
     className: 'car-icon',
