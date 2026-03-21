@@ -1,6 +1,6 @@
 // OVMS Service Worker — offline caching & PWA support
 
-const CACHE_NAME = 'ovms-v2';
+const CACHE_NAME = 'ovms-v3';
 const ASSETS = [
   './',
   './index.html',
