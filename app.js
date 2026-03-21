@@ -7,8 +7,19 @@ let marker = null;
 let updateInterval = null;
 let logger  = null;
 let alerts  = null;
-let _lastVehicleOn = null;
-let _lastCharging  = null;
+let _lastVehicleOn     = null;
+let _lastCharging      = null;
+let _chargingDebounce  = null;
+const CHARGE_DEBOUNCE_MS = 8000;  // FT5E toggles v.c.charging ~10×/s; wait 8 s stable
+
+// FT5E plugin quirk: v.c.charging stays 'yes' after a session ends while
+// v.c.voltage drops to 0.  Require >10 V to confirm charger is actually live.
+// When voltage is null (not yet received) we default to NOT charging — safer.
+function _isReallyCharging() {
+  if (!ovms.getBool('v.c.charging')) return false;
+  const v = ovms.getFloat('v.c.voltage', 0);
+  return v !== null && v > 10;
+}
 
 // --- Init ---
 // ── Credential helpers ─────────────────────────────────────────────────────
@@ -121,7 +132,9 @@ function setupEventHandlers() {
     if (['v.b.soc', 'v.c.charging', 'v.p.latitude', 'v.p.longitude'].includes(key)) {
       refreshUI();
     }
-    alerts?.check(key, value, ovms);
+    // Skip v.c.charging here — charging alerts are fired from _checkChargingState
+    // so they go through the voltage-verified _isReallyCharging() check.
+    if (key !== 'v.c.charging') alerts?.check(key, value, ovms);
   });
 
   // Auto-start/stop trip logging
@@ -138,17 +151,31 @@ function setupEventHandlers() {
   });
 
   // Auto-start/stop charge logging
-  ovms.on('metric:v.c.charging', val => {
-    const isCharging = val === '1' || val === 'yes' || val === 'true';
-    if (isCharging === _lastCharging) return;
-    _lastCharging = isCharging;
-    if (isCharging) {
-      logger.startCharge(ovms);
-      showDebug('Charge session started — logger active');
-    } else {
-      logger.endCharge(ovms).then(c => c && showDebug(`Charge ended: SOC ${c.startSOC}% → ${c.endSOC}%`));
-    }
-  });
+  // Watch both v.c.charging and v.c.voltage so a stale 'yes' flag with 0 V
+  // doesn't trigger a fake session.
+  // Debounced charge state: FT5E publishes v.c.charging yes/no ~10×/s.
+  // Only commit a state change after it has been stable for CHARGE_DEBOUNCE_MS.
+  const _checkChargingState = () => {
+    const isCharging = _isReallyCharging();
+    if (isCharging === _lastCharging) { clearTimeout(_chargingDebounce); _chargingDebounce = null; return; }
+    if (_chargingDebounce) return;  // already waiting for this transition
+    _chargingDebounce = setTimeout(() => {
+      _chargingDebounce = null;
+      const stable = _isReallyCharging();
+      if (stable === _lastCharging) return;
+      _lastCharging = stable;
+      if (stable) {
+        logger.startCharge(ovms);
+        showDebug('Charge session started — logger active');
+        alerts?.check('v.c.charging', 'yes', ovms);
+      } else {
+        logger.endCharge(ovms).then(c => c && showDebug(`Charge ended: SOC ${c.startSOC}% → ${c.endSOC}%`));
+        alerts?.check('v.c.charging', 'no', ovms);
+      }
+    }, CHARGE_DEBOUNCE_MS);
+  };
+  ovms.on('metric:v.c.charging', _checkChargingState);
+  ovms.on('metric:v.c.voltage',  _checkChargingState);
 
   // Reconnect button
   document.getElementById('btnReconnect').addEventListener('click', () => {
@@ -278,7 +305,7 @@ function updateBattery() {
 }
 
 function updateCharging() {
-  const isCharging  = ovms.getBool('v.c.charging');
+  const isCharging  = _isReallyCharging();
   const state       = ovms.get('v.c.state') ?? '--';
   const chgPower    = ovms.getFloat('v.c.power', 2);
   const chgVoltage  = ovms.getFloat('v.c.voltage', 0);
