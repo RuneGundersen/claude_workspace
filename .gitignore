@@ -14,3 +14,4 @@ __pycache__/
 
 # Local secrets — never commit
 HeatPumps/toshiba_secrets.json
+OVMS/mosquitto/passwd
