@@ -23,7 +23,7 @@ from ping import sweep
 from arp_cache import get_arp_table
 from port_scan import scan_hosts
 from http_probe import probe_http
-from oui import lookup, is_esp32
+from oui import lookup, is_esp32, is_raspberry_pi
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -75,12 +75,35 @@ def _ports_str(ports: list) -> str:
     return ", ".join(str(p) for p in ports)
 
 
-def print_results(results: list, ovms_hosts: list, elapsed: float, network: str) -> None:
+def print_results(results: list, ovms_hosts: list, rpi_hosts: list, elapsed: float, network: str) -> None:
     sep = "─" * 110
 
     print()
     print(f"  Scan of {network}  ·  {len(results)} hosts  ·  {elapsed:.1f}s")
     print()
+
+    # ── Raspberry Pi highlight ─────────────────────────────────────────────────
+    if rpi_hosts:
+        for h in rpi_hosts:
+            print("  ╔══════════════════════════════════════════════════════╗")
+            print("  ║            🍓  RASPBERRY PI FOUND                    ║")
+            print("  ╚══════════════════════════════════════════════════════╝")
+            print(f"    IP       : {h['ip']}")
+            if h["hostname"]:
+                print(f"    Hostname : {h['hostname']}")
+            print(f"    MAC      : {h['mac']}")
+            print(f"    Vendor   : {h['vendor']}")
+            print(f"    Ports    : {_ports_str(h['ports'])}")
+            ssh = "22" if 22 in h["ports"] else "not detected"
+            print(f"    SSH      : {ssh}")
+            print()
+            print(f"    → SSH:   ssh pi@{h['ip']}")
+            print()
+    else:
+        print("  Raspberry Pi not found on this scan.")
+        print("  Tips: make sure the Pi is powered on, connected to the same network,")
+        print("  and that SSH is enabled (raspi-config → Interface Options → SSH).")
+        print()
 
     # ── OVMS highlight ────────────────────────────────────────────────────────
     if ovms_hosts:
@@ -123,7 +146,11 @@ def print_results(results: list, ovms_hosts: list, elapsed: float, network: str)
     print(sep)
 
     for h in results:
-        ovms_flag = " ◄ OVMS" if h["ovms_confirmed"] else ""
+        flags = ""
+        if h["ovms_confirmed"]:
+            flags += " ◄ OVMS"
+        if h.get("is_rpi"):
+            flags += " ◄ RPi"
         print(
             _col(h["ip"], 16) +
             _col(h["mac"], 20) +
@@ -131,7 +158,7 @@ def print_results(results: list, ovms_hosts: list, elapsed: float, network: str)
             _col(_ports_str(h["ports"]), 22) +
             _col(h["hostname"] or "-", 22) +
             (h["http"].get("title") or "-") +
-            ovms_flag
+            flags
         )
 
     print(sep)
@@ -194,11 +221,13 @@ def main():
     # Assemble results
     results = []
     ovms_hosts = []
+    rpi_hosts = []
 
     for ip in live:
         mac = arp.get(ip, "??:??:??:??:??:??")
         http = http_data.get(ip, {})
         ovms_score = http.get("ovms_score", 0) + (2 if is_esp32(mac) else 0)
+        rpi = is_raspberry_pi(mac)
         entry = {
             "ip": ip,
             "mac": mac,
@@ -208,12 +237,15 @@ def main():
             "http": http,
             "ovms_score": ovms_score,
             "ovms_confirmed": http.get("ovms_confirmed", False),
+            "is_rpi": rpi,
         }
         if ovms_score > 0:
             ovms_hosts.append(entry)
+        if rpi:
+            rpi_hosts.append(entry)
         results.append(entry)
 
-    print_results(results, ovms_hosts, time.time() - t0, args.network)
+    print_results(results, ovms_hosts, rpi_hosts, time.time() - t0, args.network)
 
 
 if __name__ == "__main__":

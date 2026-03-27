@@ -1,0 +1,4 @@
+numpy
+matplotlib
+adafruit-blinka
+adafruit-circuitpython-ads1x15

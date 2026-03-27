@@ -1,5 +1,14 @@
 """OUI vendor lookup — inline table, no external files or pip installs."""
 
+# Known Raspberry Pi Foundation / Raspberry Pi Trading OUI prefixes
+RPI_OUIS = {
+    "b8:27:eb",  # Raspberry Pi Foundation (Pi 1, 2, 3)
+    "dc:a6:32",  # Raspberry Pi Trading (Pi 4, CM4)
+    "e4:5f:01",  # Raspberry Pi Trading (Pi 4, 400, Zero 2W)
+    "d8:3a:dd",  # Raspberry Pi Trading
+    "28:cd:c1",  # Raspberry Pi Trading
+}
+
 # Known Espressif (ESP32/ESP8266) OUI prefixes — OVMS uses ESP32
 ESP32_OUIS = {
     "24:6f:28", "30:ae:a4", "a4:cf:12", "40:91:51",
@@ -155,3 +164,12 @@ def is_esp32(mac: str) -> bool:
     norm = _normalise(mac)
     oui = ":".join(norm.split(":")[:3])
     return oui in ESP32_OUIS
+
+
+def is_raspberry_pi(mac: str) -> bool:
+    """Return True if MAC OUI matches a known Raspberry Pi prefix."""
+    if not mac or mac.startswith("?"):
+        return False
+    norm = _normalise(mac)
+    oui = ":".join(norm.split(":")[:3])
+    return oui in RPI_OUIS
